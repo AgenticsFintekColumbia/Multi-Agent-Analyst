@@ -3,7 +3,7 @@ tasks.py
 
 Defines the CrewAI tasks for:
 - Explainer agent: explain why the analyst gave a rating.
-- Recommender agent: issue its own BUY/HOLD/SELL-style rating.
+- Recommender agent: issue its own BUY/HOLD/SELL-style rating (this is now not being used, i had one there just as a placeholder
 """
 
 from crewai import Task
@@ -80,7 +80,7 @@ Constraints:
         ),
     )
 
-
+#this was a placeholder the multi agent approach vinod devloped is now being used
 def create_recommender_task(agent, context_str: str) -> Task:
     """
     Create the Recommender task for a given agent and context.

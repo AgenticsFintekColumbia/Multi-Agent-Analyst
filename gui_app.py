@@ -1,7 +1,7 @@
 """
 gui_app.py
 
-A Streamlit GUI for the Agentic Recommendation Explainer system.
+A Streamlit GUI this builds the interafce - we need to keep working on this.
 
 Features:
 - Load IBES, FUND, NEWS data.
@@ -9,7 +9,7 @@ Features:
 - Build the context around that recommendation.
 - Run either:
   - Explainer agent (why did analyst give this rating?), or
-  - Recommender agent (what rating would the model give?), or both.
+  - Recommender agent (what rating would the model give?), or both(need to expand this filter if we are going to do it).
 """
 
 import os
@@ -18,12 +18,13 @@ import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
 
+# Load environment variables from .env (for local dev) this gives ur api key
+load_dotenv()
+
 from data_loader import load_datasets, build_context_for_rec
 from crew_config import create_explainer_crew, create_recommender_crew
+from multi_recommender import run_multi_analyst_recommendation
 
-
-# Load environment variables from .env (for local dev)
-load_dotenv()
 
 
 @st.cache_data(show_spinner="Loading datasets...")
@@ -37,20 +38,16 @@ def get_datasets():
 
 
 def main():
-    # Basic page config
-    st.set_page_config(
-        page_title="Agentic Recommendation Explainer (Gemini + CrewAI)",
-        layout="wide",
-    )
 
-    st.title("📈 Agentic Recommendation Explainer (Gemini + CrewAI)")
+
+    st.title("Agentic Recommendation Explainer")
     st.write(
         "Interactively explore IBES analyst recommendations and generate "
-        "LLM-based explanations and model recommendations using your "
-        "Gemini-powered agents."
+        "LLM-based explanations and model recommendations using "
+        "Gemini-powered agents. Agentic AI, The Data Economy & Fintech"
     )
 
-    # --- API key check ---
+    #api key check
 
     api_key = (
         os.getenv("GEMINI_API_KEY")
@@ -69,7 +66,7 @@ def main():
         )
         st.stop()
 
-    # --- Load data ---
+    #load data
 
     ibes, fund, news = get_datasets()
 
@@ -91,28 +88,43 @@ def main():
         index=0,
     )
 
-    # Sidebar: ticker & recommendation selection
+    #Sidebar: ticker & recommendation selection
     st.sidebar.header("Selection")
 
-    all_tickers = sorted(ibes["ticker"].dropna().unique().tolist())
+    #Prefer official ticker (oftic) when available, otherwise fall back to IBES ticker
+    #Create a single "display_ticker" column for the dropdown
+    ibes_ticker_map = ibes.copy()
+    ibes_ticker_map["display_ticker"] = ibes_ticker_map["oftic"].fillna(ibes_ticker_map["ticker"])
 
+    #Build the unique list of display tickers
+    all_tickers = sorted(ibes_ticker_map["display_ticker"].dropna().unique().tolist())
+
+    #Default to AMZN if present, else first ticker
     default_ticker_index = 0
     if "AMZN" in all_tickers:
         default_ticker_index = all_tickers.index("AMZN")
 
     selected_ticker = st.sidebar.selectbox(
-        "Choose ticker:",
+        "Choose ticker (official when available):",
         all_tickers,
         index=default_ticker_index,
     )
 
-    ibes_ticker = ibes[ibes["ticker"] == selected_ticker].copy()
+    #Filter IBES rows where either oftic OR ticker matches the selected display ticker
+    ibes_ticker = ibes[
+        (ibes["oftic"] == selected_ticker) | (ibes["ticker"] == selected_ticker)
+    ].copy()
 
     if ibes_ticker.empty:
         st.error(f"No IBES recommendations found for ticker {selected_ticker}.")
         st.stop()
 
-    # Build labels for each rec of this ticker
+
+    if ibes_ticker.empty:
+        st.error(f"No IBES recommendations found for ticker {selected_ticker}.")
+        st.stop()
+
+    #Build labels for each rec of this ticker
     option_labels = []
     option_indices = []
     for idx, row in ibes_ticker.iterrows():
@@ -130,7 +142,7 @@ def main():
 
     selected_rec_index = int(selected_label.split(" | ")[0])
 
-    # Window sliders
+    #Window sliders
     fund_window_days = st.sidebar.slider(
         "FUND window (days before rec date):",
         min_value=7,
@@ -146,7 +158,7 @@ def main():
         step=1,
     )
 
-    # --- Main: selected IBES rec ---
+    #main:selected ibes rec
 
     st.subheader("1️⃣ Selected IBES Recommendation")
 
@@ -154,7 +166,7 @@ def main():
 
     cols = st.columns(4)
 
-    # Convert everything to string for st.metric
+    #Convert everything to string for st.metric
     ticker_str = str(rec_series.get("ticker", "N/A"))
     company_str = str(rec_series.get("cname", "N/A"))
 
@@ -171,10 +183,21 @@ def main():
     cols[2].metric("Recommendation Date", rec_date_str)
     cols[3].metric("IBES Rating (etext)", rating_str)
 
+    #recheck this was from mismatch tickers due to ibes data, note if IBES ticker differs from official exchange ticker (oftic)
+    official_ticker = rec_series.get("oftic", None)
+
+    if pd.notna(official_ticker) and str(official_ticker) != ticker_str:
+        st.caption(
+            f"Note: IBES ticker code **{ticker_str}** differs from the official "
+            f"exchange ticker **{official_ticker}** (`oftic`). "
+            "This app uses the IBES ticker as the primary identifier."
+        )
+
+
     with st.expander("Show full IBES row"):
         st.write(rec_series.to_dict())
 
-    # --- Main: context ---
+    #main context
 
     st.subheader("2️⃣ Context (IBES + FUND + NEWS)")
 
@@ -190,7 +213,7 @@ def main():
     with st.expander("Show raw context string", expanded=False):
         st.text(context_str)
 
-    # --- Main: run agent(s) ---
+    #main: run agents
 
     st.subheader("3️⃣ Run Agent(s)")
 
@@ -200,7 +223,7 @@ def main():
         "its own rating."
     )
 
-    # Explainer option
+    #Explainer option
     if agent_mode in [
         "Explainer: Explain analyst rating",
         "Both: Run Explainer and Recommender",
@@ -218,30 +241,45 @@ def main():
                     st.markdown("### 📄 Explainer Output (Markdown)")
                     st.markdown(explanation_md)
 
-    # Recommender option
+    #Recommender option (multi-analyst)
     if agent_mode in [
         "Recommender: Model's own rating",
         "Both: Run Explainer and Recommender",
     ]:
         if st.button("📊 Generate Model Recommendation", key="recommender_btn"):
-            with st.spinner("Running Recommender Agent with Gemini..."):
-                try:
-                    crew = create_recommender_crew(context_str)
-                    reco_md = crew.kickoff()
-                except Exception as e:
-                    st.error(f"Error running Recommender agent: {type(e).__name__}: {e}")
-                else:
-                    st.success("Model recommendation generated successfully!")
-                    st.markdown("---")
-                    st.markdown("### 🧮 Model Recommendation (Markdown)")
-                    st.markdown(reco_md)
+            cusip_val = rec_series.get("cusip", None)
+            rec_date_val = rec_series.get("anndats", None)
 
-                    # Optional: show IBES vs model rating side-by-side as text
-                    st.markdown("#### IBES vs Model (quick view)")
-                    st.write(f"- **IBES rating (etext):** {rating_str}")
-                    st.write(
-                        "- **Model rating:** (see `Model rating:` line in the markdown above)"
-                    )
+            if pd.isna(cusip_val) or pd.isna(rec_date_val):
+                st.error("CUSIP or recommendation date is missing for this IBES row; "
+                         "cannot run the multi-analyst recommender.")
+            else:
+                with st.spinner("Running multi-analyst Recommender Agent with Gemini..."):
+                    try:
+                        reco_md = run_multi_analyst_recommendation(
+                            cusip=str(cusip_val),
+                            rec_date=rec_date_val,
+                            fund_df=fund,
+                            news_df=news,
+                            news_window_days=news_window_days,
+                        )
+                    except Exception as e:
+                        st.error(
+                            f"Error running multi-analyst Recommender agent: "
+                            f"{type(e).__name__}: {e}"
+                        )
+                    else:
+                        st.success("Model recommendation generated successfully!")
+                        st.markdown("---")
+                        st.markdown("### 🧮 Model Recommendation (Multi-Analyst)")
+                        st.markdown(reco_md)
+
+                        # Optional: quick IBES vs model note
+                        st.markdown("#### IBES vs Model (quick view)")
+                        st.write(f"- **IBES rating (etext):** {rating_str}")
+                        st.write(
+                            "- **Model rating:** see the final rating in the markdown above."
+                        )
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 """
 crew_config.py
 
-Configures and creates the Crews (teams of agents and tasks).
+Configures and creates the Crews (teams of agents and tasks
 
 - Explainer crew: explains why the analyst gave a rating.
 - Recommender crew: issues the model's own rating.

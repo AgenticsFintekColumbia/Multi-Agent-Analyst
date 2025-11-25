@@ -1,7 +1,7 @@
 """
 main.py
 
-Entry point for the agentic recommendation explainer system using Google Gemini.
+Entry point
 """
 
 import pandas as pd
@@ -15,9 +15,7 @@ from crew_config import create_explainer_crew
 
 
 def main():
-    """
-    Main function that orchestrates the workflow.
-    """
+
     
        #Load environment variables (like API keys) from .env file
     load_dotenv()
@@ -46,7 +44,7 @@ def main():
     
     #Step 2: Build context for a recommendation
     print("Step 2: Building context for first recommendation...")
-    rec_index = 0  #Change this to explore different recommendations
+    rec_index = 0  #Change this to explore different recommendations, use for backtesting/verifying
     
     context_str, rec_row = build_context_for_rec(
         ibes=ibes,

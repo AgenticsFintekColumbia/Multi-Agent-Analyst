@@ -1,13 +1,9 @@
 """
 data_loader.py
 
-This module loads IBES, FUND, and NEWS data from .feather files,
+This  loads IBES, FUND, and NEWS data from .feather files,
 and builds human-readable context strings for analyst recommendations.
 
-Key concepts:
-- DataFrame: A table of data (like Excel) that pandas uses
-- Function: A reusable piece of code that takes inputs and returns outputs
-- String formatting: Creating nice text output that humans can read
 """
 
 import pandas as pd
@@ -20,7 +16,7 @@ def load_datasets(data_dir: str = "data/"):
     Load the three main datasets from .feather files.
     
     What this does:
-    1. Reads binary .feather files into pandas DataFrames (tables)
+    1. Reads binary .feather files into pandas DataFrames
     2. Converts date columns from text to proper date objects
     3. Returns all three datasets for use in other functions
     
@@ -41,19 +37,19 @@ def load_datasets(data_dir: str = "data/"):
     print("Loading NEWS data...")
     news = pd.read_feather(data_path / "ciq_dj30_stock_news_2008_24.feather")
     
-    # Convert date strings to datetime objects for proper date arithmetic
-    # The "errors='coerce'" means: if a date is invalid, replace it with NaT (Not a Time)
+    #convert date strings to datetime objects for proper date arithmetic
+    #the "errors='coerce'" means: if a date is invalid, replace it with NaT (Not a Time)
     print("Converting date columns...")
     ibes["anndats"] = pd.to_datetime(ibes["anndats"], errors="coerce")
     ibes["actdats"] = pd.to_datetime(ibes["actdats"], errors="coerce")
     
-    # FUND date is already datetime, but let's ensure it
+    #FUND date is already datetime, but let's ensure it
     fund["date"] = pd.to_datetime(fund["date"], errors="coerce")
     
-    # NEWS announcedate needs conversion
+    #NEWS announcedate needs conversion
     news["announcedate"] = pd.to_datetime(news["announcedate"], errors="coerce")
     
-    # Clean CUSIP: strip whitespace and make uppercase for consistent matching
+    #Clean CUSIP: strip whitespace and make uppercase for consistent matching
     ibes["cusip"] = ibes["cusip"].str.strip().str.upper()
     fund["cusip"] = fund["cusip"].str.strip().str.upper()
     news["cusip"] = news["cusip"].str.strip().str.upper()
@@ -120,13 +116,13 @@ def build_context_for_rec(
     print(f"  Recommendation date: {ann_date.date()}")
     print(f"  CUSIP: {cusip}")
     
-    # ========== FUND DATA: Last 30 days before recommendation ==========
+    #FUND DATA: Last 30 days before recommendation
     
-    # Filter FUND data for same company (matching CUSIP)
+    #Filter FUND data for same company (matching CUSIP)
     fund_company = fund[fund["cusip"] == cusip].copy()
     
-    # nly keep rows where date is BEFORE the recommendation date
-    # nd within the last 30 days before that date
+    #nly keep rows where date is BEFORE the recommendation date
+    #and within the last 30 days before that date
     start_date = ann_date - timedelta(days=fund_window_days)
     fund_window = fund_company[
         (fund_company["date"] >= start_date) & 
@@ -135,9 +131,9 @@ def build_context_for_rec(
     
     print(f"  Found {len(fund_window)} FUND rows in 30-day window before {ann_date.date()}")
     
-    # ========== NEWS DATA: ±7 days around recommendation ==========
+    #NEWS DATA: ±7 days around recommendation
     
-    # Filter NEWS data for same company
+    #Filter NEWS data for same company
     news_company = news[news["cusip"] == cusip].copy()
     
     #keep news from 7 days before to 7 days after
@@ -247,17 +243,16 @@ def build_context_for_rec(
     context_parts.append("")
     context_parts.append("=" * 70)
     
-    # Join all parts into one string
+    #Join all parts into one string
     context_str = "\n".join(context_parts)
     
     return context_str, rec
 
 
-#Optional: A quick test function
+#tester
 if __name__ == "__main__":
     """
-    This runs only when you execute: python data_loader.py
-    It's a simple test to make sure the functions work.
+    This runs only when you execute: python data_loader.py test to make sure you data is laoding properly
     """
     print("Testing data_loader.py...")
     ibes, fund, news = load_datasets()

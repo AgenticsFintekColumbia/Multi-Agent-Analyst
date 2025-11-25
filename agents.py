@@ -1,13 +1,13 @@
 """
 agents.py
 
-Defines the AI agents for our system using Google Gemini via CrewAI.
+defines the AI agents for our system using Google Gemini via CrewAI.
 """
 
 import os
 from crewai import Agent, LLM
 
-
+#i was getting errors with crew ai's built in gemini which is why this checks for google api and gemini, the correct one is google though
 def _get_gemini_api_key() -> str:
     """Fetch Gemini API key from env (GEMINI_API_KEY or GOOGLE_API_KEY)."""
     api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
@@ -23,7 +23,7 @@ def _build_gemini_llm(temperature: float = 0.3) -> LLM:
     """Create a Gemini LLM instance for CrewAI."""
     api_key = _get_gemini_api_key()
     llm = LLM(
-        model="gemini-2.5-flash",   # Fast & cheap, good for this use case
+        model="gemini-2.5-flash",#Fast & cheap, good for this use case
         api_key=api_key,
         temperature=temperature,
     )
@@ -91,7 +91,7 @@ def create_recommender_agent() -> Agent:
       plus a confidence score and a short rationale
     """
 
-    # For reproducibility, we can keep temperature low
+    #for reproducibility, we can keep temperature low
     llm = _build_gemini_llm(temperature=0.2)
 
     agent = Agent(
