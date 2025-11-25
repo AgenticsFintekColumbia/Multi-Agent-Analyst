@@ -125,8 +125,8 @@ def build_context_for_rec(
     # Filter FUND data for same company (matching CUSIP)
     fund_company = fund[fund["cusip"] == cusip].copy()
     
-    # Only keep rows where date is BEFORE the recommendation date
-    # and within the last 30 days before that date
+    # nly keep rows where date is BEFORE the recommendation date
+    # nd within the last 30 days before that date
     start_date = ann_date - timedelta(days=fund_window_days)
     fund_window = fund_company[
         (fund_company["date"] >= start_date) & 
@@ -140,7 +140,7 @@ def build_context_for_rec(
     # Filter NEWS data for same company
     news_company = news[news["cusip"] == cusip].copy()
     
-    # Keep news from 7 days before to 7 days after
+    #keep news from 7 days before to 7 days after
     news_start = ann_date - timedelta(days=news_window_days)
     news_end = ann_date + timedelta(days=news_window_days)
     news_window = news_company[
@@ -150,11 +150,11 @@ def build_context_for_rec(
     
     print(f"  Found {len(news_window)} NEWS items in ±7 day window")
     
-    # ========== BUILD THE CONTEXT STRING ==========
+    #build the context string
     
     context_parts = []
     
-    # Header with basic info
+    #Header with basic info
     context_parts.append("=" * 70)
     context_parts.append("ANALYST RECOMMENDATION CONTEXT")
     context_parts.append("=" * 70)
@@ -172,14 +172,14 @@ def build_context_for_rec(
     context_parts.append(f"  - Investment Recommendation Text (itext): {itext}")
     context_parts.append("")
     
-    # FUND data section
+    #FUND data section
     context_parts.append("-" * 70)
     context_parts.append(f"PRICE & FUNDAMENTALS (Last {fund_window_days} days before recommendation)")
     context_parts.append("-" * 70)
     context_parts.append("")
     
     if len(fund_window) > 0:
-        # Show summary statistics
+        #Show summary statistics
         latest_price = fund_window.iloc[-1]["price"] if "price" in fund_window.columns else "N/A"
         avg_volume = fund_window["volume"].mean() if "volume" in fund_window.columns else "N/A"
         
@@ -187,7 +187,7 @@ def build_context_for_rec(
         context_parts.append(f"Average Daily Volume: {avg_volume:,.0f}" if isinstance(avg_volume, (int, float)) else f"Average Daily Volume: {avg_volume}")
         context_parts.append("")
         
-        # Show recent daily data (last 10 days or all if fewer)
+        #Show recent daily data (last 10 days or all if fewer)
         recent_days = fund_window.tail(10)
         context_parts.append("Recent Daily Data:")
         
@@ -197,14 +197,14 @@ def build_context_for_rec(
             daily_ret = row.get("daily_return_adjusted", "N/A")
             volume = row.get("volume", "N/A")
             
-            # Format numbers nicely
+            #Format numbers nicely
             price_str = f"${price:.2f}" if isinstance(price, (int, float)) else str(price)
             ret_str = f"{daily_ret:+.3%}" if isinstance(daily_ret, (int, float)) else str(daily_ret)
             vol_str = f"{volume:,.0f}" if isinstance(volume, (int, float)) else str(volume)
             
             context_parts.append(f"  • {date_str}: Price={price_str}, Return={ret_str}, Volume={vol_str}")
         
-        # Add key fundamentals if available
+        #Add key fundamentals if available
         if "eps_ttm" in fund_window.columns or "roe" in fund_window.columns:
             context_parts.append("")
             context_parts.append("Key Fundamentals (most recent):")
@@ -226,7 +226,7 @@ def build_context_for_rec(
     
     context_parts.append("")
     
-    # NEWS data section
+    #NEWS data section
     context_parts.append("-" * 70)
     context_parts.append(f"COMPANY NEWS (±{news_window_days} days around recommendation)")
     context_parts.append("-" * 70)
@@ -253,7 +253,7 @@ def build_context_for_rec(
     return context_str, rec
 
 
-# Optional: A quick test function
+#Optional: A quick test function
 if __name__ == "__main__":
     """
     This runs only when you execute: python data_loader.py

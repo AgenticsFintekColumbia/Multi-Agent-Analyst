@@ -1,6 +1,8 @@
+#this shows the structure of the feather files
+
 import pandas as pd
 
-# If your .feather files are in a "data" folder, change these to "data/filename.feather"
+#If .feather files are in a "data" folder, change these to "data/filename.feather"
 IBES_PATH = "ibes_dj30_stock_rec_2008_24.feather"
 FUND_PATH = "fund_tech_dj30_stocks_2008_24.feather"
 NEWS_PATH = "ciq_dj30_stock_news_2008_24.feather"
@@ -8,7 +10,7 @@ NEWS_PATH = "ciq_dj30_stock_news_2008_24.feather"
 
 def inspect_df(name, df, show_rows=5):
     print(f"\n===== {name} =====")
-    print(f"Shape: {df.shape}")  # (rows, columns)
+    print(f"Shape: {df.shape}")  #(rows, columns)
     print("\nColumns:")
     print(list(df.columns))
 
@@ -22,7 +24,7 @@ def inspect_df(name, df, show_rows=5):
 
 
 def main():
-    # Load each feather file
+    #Load each feather file
     ibes = pd.read_feather(IBES_PATH)
     fund = pd.read_feather(FUND_PATH)
     news = pd.read_feather(NEWS_PATH)

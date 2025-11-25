@@ -19,10 +19,10 @@ def main():
     Main function that orchestrates the workflow.
     """
     
-       # Load environment variables (like API keys) from .env file
+       #Load environment variables (like API keys) from .env file
     load_dotenv()
 
-    # Check if API key is set (support both GEMINI_API_KEY and GOOGLE_API_KEY)
+    #Check if API key is set (support both GEMINI_API_KEY and GOOGLE_API_KEY)
     api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
     if not api_key:
         print("=" * 70)
@@ -39,14 +39,14 @@ def main():
     print("=" * 70)
     print()
     
-    # Step 1: Load all datasets
+    #Step 1: Load all datasets
     print("Step 1: Loading datasets...")
     ibes, fund, news = load_datasets(data_dir="data/")
     print()
     
-    # Step 2: Build context for a recommendation
+    #Step 2: Build context for a recommendation
     print("Step 2: Building context for first recommendation...")
-    rec_index = 0  # Change this to explore different recommendations
+    rec_index = 0  #Change this to explore different recommendations
     
     context_str, rec_row = build_context_for_rec(
         ibes=ibes,
@@ -68,17 +68,17 @@ def main():
     print("=" * 70)
     print()
     
-    # Step 3: Run the Explainer agent
+    #Step 3: Run the Explainer agent
     print("Step 3: Running Explainer Agent with Gemini...")
     print("(This will take 10-30 seconds as the AI analyzes the data...)")
     print()
     
     try:
-        # Create and run the crew
+        #Create and run the crew
         crew = create_explainer_crew(context_str)
         result = crew.kickoff()
         
-        # Print the result
+        #Print the result
         print()
         print("=" * 70)
         print("EXPLAINER AGENT OUTPUT")

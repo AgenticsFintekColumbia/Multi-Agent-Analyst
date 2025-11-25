@@ -1,44 +1,51 @@
 """
 crew_config.py
 
-Configures and creates the Crew (team of agents working together).
+Configures and creates the Crews (teams of agents and tasks).
 
-What's a Crew?
-A Crew is a team of agents working on tasks. For now, we have just one agent
-(the Explainer), but later we might add more (like a Recommender agent).
+- Explainer crew: explains why the analyst gave a rating.
+- Recommender crew: issues the model's own rating.
 """
 
 from crewai import Crew, Process
-from agents import create_explainer_agent
-from tasks import create_explainer_task
+
+from agents import create_explainer_agent, create_recommender_agent
+from tasks import create_explainer_task, create_recommender_task
 
 
-def create_explainer_crew(context_str: str):
+def create_explainer_crew(context_str: str) -> Crew:
     """
     Create a Crew with the Explainer agent and task.
-    
-    Args:
-        context_str: The formatted context with IBES, FUND, NEWS data
-        
-    Returns:
-        Crew: A configured crew ready to run
     """
-    
-    # Step 1: Create the agent
     explainer_agent = create_explainer_agent()
-    
-    # Step 2: Create the task for this agent
     explainer_task = create_explainer_task(
         agent=explainer_agent,
-        context_str=context_str
+        context_str=context_str,
     )
-    
-    # Step 3: Assemble into a Crew
+
     crew = Crew(
         agents=[explainer_agent],
         tasks=[explainer_task],
-        process=Process.sequential,  # Tasks run one after another
-        verbose=True,  # Show detailed progress
+        process=Process.sequential,
+        verbose=True,
     )
-    
+    return crew
+
+
+def create_recommender_crew(context_str: str) -> Crew:
+    """
+    Create a Crew with the Recommender agent and task.
+    """
+    recommender_agent = create_recommender_agent()
+    recommender_task = create_recommender_task(
+        agent=recommender_agent,
+        context_str=context_str,
+    )
+
+    crew = Crew(
+        agents=[recommender_agent],
+        tasks=[recommender_task],
+        process=Process.sequential,
+        verbose=True,
+    )
     return crew
