@@ -1,15 +1,10 @@
 """
-gui_app.py
+gui_app.py - UPDATED VERSION WITH MULTI-AGENT EXPLAINER
 
-A Streamlit GUI this builds the interafce - we need to keep working on this.
-
-Features:
-- Load IBES, FUND, NEWS data.
-- Pick a ticker and specific IBES recommendation.
-- Build the context around that recommendation.
-- Run either:
-  - Explainer agent (why did analyst give this rating?), or
-  - Recommender agent (what rating would the model give?), or both(need to expand this filter if we are going to do it).
+Replace your existing gui_app.py with this version.
+The key changes are:
+1. Import multi_explainer instead of crew_config for explainer
+2. Update the explainer button logic to use run_multi_analyst_explainer
 """
 
 import os
@@ -18,11 +13,11 @@ import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
 
-# Load environment variables from .env (for local dev) this gives ur api key
+# Load environment variables from .env
 load_dotenv()
 
 from data_loader import load_datasets, build_context_for_rec
-from crew_config import create_explainer_crew, create_recommender_crew
+from multi_explainer import run_multi_analyst_explainer  # NEW IMPORT
 from multi_recommender import run_multi_analyst_recommendation
 
 
@@ -223,22 +218,32 @@ def main():
         "its own rating."
     )
 
-    #Explainer option
+    #=============================================================================
+    # UPDATED: Multi-Agent Explainer option
+    #=============================================================================
     if agent_mode in [
         "Explainer: Explain analyst rating",
         "Both: Run Explainer and Recommender",
     ]:
-        if st.button("🔍 Generate Explanation", key="explainer_btn"):
-            with st.spinner("Running Explainer Agent with Gemini..."):
+        if st.button("🔍 Generate Explanation (Multi-Agent)", key="explainer_btn"):
+            with st.spinner("Running Multi-Agent Explainer Team with Gemini..."):
                 try:
-                    crew = create_explainer_crew(context_str)
-                    explanation_md = crew.kickoff()
+                    explanation_md = run_multi_analyst_explainer(
+                        ibes_df=ibes,
+                        fund_df=fund,
+                        news_df=news,
+                        rec_index=selected_rec_index,
+                        fund_window_days=fund_window_days,
+                        news_window_days=news_window_days,
+                    )
                 except Exception as e:
-                    st.error(f"Error running Explainer agent: {type(e).__name__}: {e}")
+                    st.error(f"Error running Multi-Agent Explainer: {type(e).__name__}: {e}")
+                    import traceback
+                    st.text(traceback.format_exc())
                 else:
                     st.success("Explanation generated successfully!")
                     st.markdown("---")
-                    st.markdown("### 📄 Explainer Output (Markdown)")
+                    st.markdown("### 📄 Multi-Agent Explainer Output")
                     st.markdown(explanation_md)
 
     #Recommender option (multi-analyst)
@@ -254,7 +259,7 @@ def main():
                 st.error("CUSIP or recommendation date is missing for this IBES row; "
                          "cannot run the multi-analyst recommender.")
             else:
-                with st.spinner("Running multi-analyst Recommender Agent with Gemini..."):
+                with st.spinner("Running multi-analyst Recommender Team with Gemini..."):
                     try:
                         reco_md = run_multi_analyst_recommendation(
                             cusip=str(cusip_val),
@@ -262,6 +267,8 @@ def main():
                             fund_df=fund,
                             news_df=news,
                             news_window_days=news_window_days,
+                            ticker=ticker_str,
+                            company=company_str,
                         )
                     except Exception as e:
                         st.error(

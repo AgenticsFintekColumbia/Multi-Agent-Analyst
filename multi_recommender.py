@@ -1,7 +1,7 @@
 """
 multi_recommender.py
 
-Multi-agent Recommender pipeline WITHOUT a Portfolio Manager LLM.
+Multi-agent Recommender pipeline WITH a Portfolio Manager LLM.
 
 Given:
 - cusip
@@ -12,21 +12,30 @@ Given:
 It:
 - Extracts the latest fundamentals & technicals before rec_date
 - Extracts recent news
-- Runs 3 analyst agents (fundamental, technical, news)
-- Combines their ratings in Python (simple rule) into a final model rating
-- Returns a markdown report.
+- Runs 3 specialist analyst agents (fundamental, technical, news)
+- Runs Portfolio Manager agent to synthesize their ratings
+- Returns a comprehensive markdown report
 """
 
-from typing import List, Optional
-from collections import Counter
+from typing import List
 
 import pandas as pd
-from crewai import Crew
+from crewai import Crew, Process
 
-from multi_agents import fundamental_agent, technical_agent, news_agent
-from multi_tasks import fundamental_task, technical_task, news_task
+from multi_agents import (
+    fundamental_agent,
+    technical_agent,
+    news_agent,
+    recommender_manager,
+)
+from multi_tasks import (
+    fundamental_task,
+    technical_task,
+    news_task,
+    create_recommender_manager_task,
+)
 
-#These column sets mirror vinods code
+# Column sets for data extraction
 TECHNICAL_COLS: List[str] = [
     "price_adjusted", "volume_adjusted", "daily_return_adjusted",
     "daily_return_excluding_dividends", "shares_outstanding",
@@ -44,84 +53,6 @@ FUNDAMENTAL_COLS: List[str] = [
     "eps_growth_2q", "eps_growth_4q",
 ]
 
-#Canonical rating labels we expect from agents (we should normailize these)
-CANONICAL_RATINGS = ["StrongBuy", "Buy", "Hold", "UnderPerform", "Sell"]
-
-
-def _extract_rating(text: str) -> Optional[str]:
-    """
-    Try to extract a rating from the agent's text output.
-
-    We look for any of the canonical labels (or common variants)
-    in a case-insensitive way and map them to one of:
-    {StrongBuy, Buy, Hold, UnderPerform, Sell}.
-    """
-    if not text:
-        return None
-
-    lower = text.lower()
-
-    patterns = [
-        ("strongbuy", "StrongBuy"),
-        ("strong buy", "StrongBuy"),
-        ("strong_buy", "StrongBuy"),
-        ("strong-buy", "StrongBuy"),
-        ("strong sell", "Sell"),  #just in case
-
-        ("underperform", "UnderPerform"),
-        ("under perform", "UnderPerform"),
-
-        ("hold", "Hold"),
-
-        ("sell", "Sell"),
-        ("buy", "Buy"),
-    ]
-
-    #Find the earliest occurrence of any pattern
-    best_pos = None
-    best_label = None
-
-    for pat, label in patterns:
-        idx = lower.find(pat)
-        if idx != -1:
-            if best_pos is None or idx < best_pos:
-                best_pos = idx
-                best_label = label
-
-    return best_label
-
-
-def _combine_ratings(fund_rating: Optional[str],
-                     tech_rating: Optional[str],
-                     news_rating: Optional[str]) -> str:
-    """
-    Combine the three analyst ratings into a single final rating.
-
-    Simple rule:
-    - Use majority vote over {fund, tech, news} (ignoring None).
-    - If all three disagree or there is a tie -> return 'Hold'.
-    - If no rating at all -> return 'Unknown'.
-    """
-    ratings = [r for r in [fund_rating, tech_rating, news_rating] if r is not None]
-
-    if not ratings:
-        return "Unknown"
-
-    counts = Counter(ratings)
-    #Most common returns list of tuples sorted by count desc
-    most_common = counts.most_common()
-
-    if len(most_common) == 1:
-        # Only one unique rating
-        return most_common[0][0]
-
-    #Check for a clear majority (e.g., 2 vs 1)
-    if most_common[0][1] > most_common[1][1]:
-        return most_common[0][0]
-
-    #Otherwise, tie or all different -> default to Hold
-    return "Hold"
-
 
 def run_multi_analyst_recommendation(
     cusip: str,
@@ -129,38 +60,63 @@ def run_multi_analyst_recommendation(
     fund_df: pd.DataFrame,
     news_df: pd.DataFrame,
     news_window_days: int = 30,
+    ticker: str = "N/A",
+    company: str = "N/A",
 ) -> str:
     """
-    Run the full multi-agent recommender for a given cusip and rec_date.
+    Run the full multi-agent recommender with Portfolio Manager synthesis.
+
+    Args:
+        cusip: Company CUSIP identifier
+        rec_date: Recommendation date
+        fund_df: FUND DataFrame with fundamentals and technicals
+        news_df: NEWS DataFrame
+        news_window_days: Days of news to include
+        ticker: Optional ticker for display
+        company: Optional company name for display
 
     Returns:
-        Markdown string summarizing:
-        - Final model rating
-        - Fundamental, technical, and news ratings + their reasoning.
+        Markdown string with complete recommendation report
     """
     rec_date = pd.to_datetime(rec_date)
 
-    #1. Select latest FUND row before rec_date
-
+    print("\n" + "=" * 70)
+    print("MULTI-AGENT RECOMMENDER: Data Extraction")
+    print("=" * 70)
+    
+    # ========================================================================
+    # 1. Extract latest FUND row before rec_date
+    # ========================================================================
+    
     stock_rows = fund_df[
         (fund_df["cusip"] == cusip) & (fund_df["date"] <= rec_date)
     ].sort_values("date")
 
     if stock_rows.empty:
-        return f"## Model Multi-Analyst Recommendation\n\n" \
-               f"No FUND data found for CUSIP {cusip} on or before {rec_date.date()}."
+        return (
+            f"## Model Multi-Analyst Recommendation\n\n"
+            f"❌ **Error**: No FUND data found for CUSIP {cusip} on or before {rec_date.date()}."
+        )
 
     stock_row = stock_rows.iloc[-1]
+    data_date = stock_row["date"]
+    
+    print(f"  Using FUND data from: {data_date.date()}")
 
-    #Only keep columns that actually exist to avoid KeyError
+    # Only keep columns that exist
     fundamental_cols = [c for c in FUNDAMENTAL_COLS if c in fund_df.columns]
     technical_cols = [c for c in TECHNICAL_COLS if c in fund_df.columns]
 
     fundamental_prompt = stock_row[fundamental_cols].to_dict()
     technical_prompt = stock_row[technical_cols].to_dict()
+    
+    print(f"  Extracted {len(fundamental_cols)} fundamental metrics")
+    print(f"  Extracted {len(technical_cols)} technical indicators")
 
-    #2. Extract NEWS window
-
+    # ========================================================================
+    # 2. Extract NEWS window
+    # ========================================================================
+    
     start_date = rec_date - pd.Timedelta(days=news_window_days)
 
     news_filtered = news_df[
@@ -171,60 +127,139 @@ def run_multi_analyst_recommendation(
 
     if news_filtered.empty:
         news_prompt = "No news in the specified window."
+        print(f"  ⚠ No news found in {news_window_days}-day window")
     else:
-        #JSON string of list-of-records
         news_prompt = news_filtered.to_json(orient="records")
+        print(f"  Found {len(news_filtered)} news items in {news_window_days}-day window")
 
-    #3. Run Fundamental Analyst
+    # Stock info for context
+    stock_info = f"""
+Stock Context:
+- Ticker: {ticker}
+- Company: {company}
+- CUSIP: {cusip}
+- Analysis Date: {rec_date.date()}
+- Data as of: {data_date.date()}
+"""
 
+    # ========================================================================
+    # 3. Run Fundamental Analyst
+    # ========================================================================
+    
+    print("\n" + "=" * 70)
+    print("MULTI-AGENT RECOMMENDER: Running Specialists")
+    print("=" * 70)
+    
+    print("\nRunning Fundamental Analyst...")
     fund_crew = Crew(
         agents=[fundamental_agent],
         tasks=[fundamental_task],
-        verbose=True,
+        process=Process.sequential,
+        verbose=False,  # Avoid recursion issues
     )
     fundamental_output = fund_crew.kickoff(inputs={"fundamentals": fundamental_prompt})
     fundamental_text = str(fundamental_output)
-    fund_rating = _extract_rating(fundamental_text)
+    print("✓ Fundamental Analyst complete")
 
-    #4. Run Technical Analyst
-
+    # ========================================================================
+    # 4. Run Technical Analyst
+    # ========================================================================
+    
+    print("\nRunning Technical Analyst...")
     tech_crew = Crew(
         agents=[technical_agent],
         tasks=[technical_task],
-        verbose=True,
+        process=Process.sequential,
+        verbose=False,  # Avoid recursion issues
     )
     technical_output = tech_crew.kickoff(inputs={"technicals": technical_prompt})
     technical_text = str(technical_output)
-    tech_rating = _extract_rating(technical_text)
+    print("✓ Technical Analyst complete")
 
-    #5. Run News Analyst
-
+    # ========================================================================
+    # 5. Run News Analyst
+    # ========================================================================
+    
+    print("\nRunning News Analyst...")
     news_crew = Crew(
         agents=[news_agent],
         tasks=[news_task],
-        verbose=True,
+        process=Process.sequential,
+        verbose=False,  # Avoid recursion issues
     )
     news_output = news_crew.kickoff(inputs={"news": news_prompt})
     news_text = str(news_output)
-    news_rating = _extract_rating(news_text)
+    print("✓ News Analyst complete")
 
-    #6. Combine into final rating
+    # ========================================================================
+    # 6. Run Portfolio Manager to synthesize
+    # ========================================================================
+    
+    print("\n" + "=" * 70)
+    print("MULTI-AGENT RECOMMENDER: Manager Synthesis")
+    print("=" * 70)
+    
+    manager_task = create_recommender_manager_task(
+        fundamental_report=fundamental_text,
+        technical_report=technical_text,
+        news_report=news_text,
+        stock_info=stock_info,
+    )
+    
+    manager_crew = Crew(
+        agents=[recommender_manager],
+        tasks=[manager_task],
+        process=Process.sequential,
+        verbose=False,  # Avoid recursion issues
+    )
+    
+    final_recommendation = manager_crew.kickoff()
+    final_text = str(final_recommendation)
+    print("✓ Manager synthesis complete")
 
-    final_rating = _combine_ratings(fund_rating, tech_rating, news_rating)
-
-    #7. Build markdown report (we shoudl edit this)
-
+    # ========================================================================
+    # 7. Build comprehensive markdown report
+    # ========================================================================
+    
+    print("\n" + "=" * 70)
+    print("✓ Multi-Agent Recommender Complete!")
+    print("=" * 70)
+    
     lines = []
-    lines.append("## Model Multi-Analyst Recommendation")
-    lines.append(f"- **Final model rating:** {final_rating}")
+    
+    # Header
+    lines.append("# 🤖 Multi-Agent Model Recommendation")
     lines.append("")
-    lines.append("### Fundamental Analyst")
+    lines.append(f"**Stock**: {ticker} ({company})")
+    lines.append(f"**Analysis Date**: {rec_date.date()}")
+    lines.append(f"**Data as of**: {data_date.date()}")
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    
+    # Final recommendation first (most important)
+    lines.append(final_text)
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    
+    # Then show individual analyst reports
+    lines.append("# 📊 Individual Analyst Reports")
+    lines.append("")
+    
+    lines.append("## 1️⃣ Fundamental Analyst Report")
     lines.append(fundamental_text if fundamental_text else "_No output_")
     lines.append("")
-    lines.append("### Technical Analyst")
+    lines.append("---")
+    lines.append("")
+    
+    lines.append("## 2️⃣ Technical Analyst Report")
     lines.append(technical_text if technical_text else "_No output_")
     lines.append("")
-    lines.append("### News & Sentiment Analyst")
+    lines.append("---")
+    lines.append("")
+    
+    lines.append("## 3️⃣ News & Sentiment Analyst Report")
     lines.append(news_text if news_text else "_No output_")
 
     return "\n".join(lines)

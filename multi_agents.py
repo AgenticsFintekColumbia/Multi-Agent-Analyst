@@ -5,13 +5,14 @@ Defines the multi-analyst agents used for the Recommender pipeline:
 - fundamental_agent
 - technical_agent
 - news_agent
+- recommender_manager (NEW - synthesizes all three)
 """
 
 import os
 from crewai import Agent, LLM
 from dotenv import load_dotenv
 
-#Load environment variables when this module is imported
+# Load environment variables when this module is imported
 load_dotenv()
 
 
@@ -39,11 +40,15 @@ def _build_gemini_llm(
     return llm
 
 
-#Single shared LLM instance for all three agents
+# Single shared LLM instance for all agents
 _llm = _build_gemini_llm()
 
 
-#FUNDAMENTAL ANALYST
+# ============================================================================
+# SPECIALIST ANALYSTS (unchanged)
+# ============================================================================
+
+# FUNDAMENTAL ANALYST
 fundamental_agent = Agent(
     role="Fundamental Analyst",
     goal=(
@@ -59,11 +64,11 @@ fundamental_agent = Agent(
     allow_delegation=False,
     memory=False,
     llm=_llm,
-    verbose=True,
+    verbose=False,  # Avoid recursion issues
 )
 
 
-#TECHNICAL ANALYST
+# TECHNICAL ANALYST
 technical_agent = Agent(
     role="Technical Analyst",
     goal=(
@@ -71,16 +76,18 @@ technical_agent = Agent(
         "momentum, ATR, volatility, and price patterns. Ignore all fundamentals "
         "and news."
     ),
-    backstory="You are a quant technical trader with expertise in price action and "
-              "indicator-driven decision making.",
+    backstory=(
+        "You are a quant technical trader with expertise in price action and "
+        "indicator-driven decision making."
+    ),
     allow_delegation=False,
     memory=False,
     llm=_llm,
-    verbose=True,
+    verbose=False,  # Avoid recursion issues
 )
 
 
-#NEWS ANALYST
+# NEWS ANALYST
 news_agent = Agent(
     role="News & Sentiment Analyst",
     goal=(
@@ -88,9 +95,49 @@ news_agent = Agent(
         "Assess tone, impact, risk, and market-moving implications. "
         "Do NOT evaluate fundamentals or technical indicators."
     ),
-    backstory="You specialize in news sentiment, macro risk, and market psychology.",
+    backstory=(
+        "You specialize in news sentiment, macro risk, and market psychology."
+    ),
     allow_delegation=False,
     memory=False,
     llm=_llm,
-    verbose=True,
+    verbose=False,  # Avoid recursion issues
+)
+
+
+# ============================================================================
+# RECOMMENDER MANAGER (NEW)
+# ============================================================================
+
+recommender_manager = Agent(
+    role="Portfolio Manager & Rating Synthesizer",
+    goal=(
+        "Synthesize ratings from the Fundamental Analyst, Technical Analyst, and "
+        "News Analyst into a single, coherent model recommendation. Make the final "
+        "investment decision: StrongBuy, Buy, Hold, UnderPerform, or Sell."
+    ),
+    backstory=(
+        "You are a veteran portfolio manager with 25+ years of experience managing "
+        "institutional equity portfolios. You receive recommendations from three "
+        "specialist analysts—Fundamental, Technical, and News—and your job is to "
+        "synthesize their views into a single actionable rating.\n\n"
+        "Your decision-making process:\n"
+        "- You understand that different market regimes favor different signals "
+        "(e.g., fundamentals dominate in stable markets, technicals in volatile markets)\n"
+        "- You explicitly weigh the strength of each analyst's conviction\n"
+        "- You identify contradictions and resolve them with clear logic\n"
+        "- You prioritize risk management and downside protection\n"
+        "- You provide a confidence score based on signal alignment\n\n"
+        "Your style:\n"
+        "- Decisive: You choose ONE clear rating, not a hedge\n"
+        "- Transparent: You explain your weighting logic\n"
+        "- Risk-aware: You acknowledge uncertainties and data quality issues\n"
+        "- Quantitative: You reference specific data points from analyst reports\n\n"
+        "CRITICAL: You work ONLY with the three analyst reports provided. "
+        "You do NOT add external data or speculate beyond what they've reported."
+    ),
+    allow_delegation=False,
+    memory=False,
+    llm=_llm,
+    verbose=False,  # Avoid recursion issues
 )
