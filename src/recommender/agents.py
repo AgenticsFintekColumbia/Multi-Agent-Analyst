@@ -40,15 +40,15 @@ def _build_gemini_llm(
     return llm
 
 
-# Single shared LLM instance for all agents
+#Single shared LLM instance for all agents
 _llm = _build_gemini_llm()
 
 
 # ============================================================================
-# SPECIALIST ANALYSTS (unchanged)
+# SPECIALIST ANALYSTS (using vinods implementation)
 # ============================================================================
 
-# FUNDAMENTAL ANALYST
+#FUNDAMENTAL ANALYST
 fundamental_agent = Agent(
     role="Fundamental Analyst",
     goal=(
@@ -64,11 +64,11 @@ fundamental_agent = Agent(
     allow_delegation=False,
     memory=False,
     llm=_llm,
-    verbose=False,  # Avoid recursion issues
+    verbose=False,  #Avoid recursion issues
 )
 
 
-# TECHNICAL ANALYST
+#TECHNICAL ANALYST
 technical_agent = Agent(
     role="Technical Analyst",
     goal=(
@@ -83,11 +83,11 @@ technical_agent = Agent(
     allow_delegation=False,
     memory=False,
     llm=_llm,
-    verbose=False,  # Avoid recursion issues
+    verbose=False,  #Avoid recursion issues
 )
 
 
-# NEWS ANALYST
+#NEWS ANALYST
 news_agent = Agent(
     role="News & Sentiment Analyst",
     goal=(
@@ -101,12 +101,12 @@ news_agent = Agent(
     allow_delegation=False,
     memory=False,
     llm=_llm,
-    verbose=False,  # Avoid recursion issues
+    verbose=False,  #Avoid recursion issues
 )
 
 
 # ============================================================================
-# RECOMMENDER MANAGER (NEW)
+# RECOMMENDER MANAGER
 # ============================================================================
 
 recommender_manager = Agent(
@@ -139,5 +139,5 @@ recommender_manager = Agent(
     allow_delegation=False,
     memory=False,
     llm=_llm,
-    verbose=False,  # Avoid recursion issues
+    verbose=False,  #Avoid recursion issues
 )

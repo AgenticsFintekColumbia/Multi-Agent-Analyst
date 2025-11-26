@@ -84,9 +84,9 @@ def run_multi_analyst_recommendation(
     print("MULTI-AGENT RECOMMENDER: Data Extraction")
     print("=" * 70)
     
-    # ========================================================================
+    
     # 1. Extract latest FUND row before rec_date
-    # ========================================================================
+    
     
     stock_rows = fund_df[
         (fund_df["cusip"] == cusip) & (fund_df["date"] <= rec_date)
@@ -113,9 +113,9 @@ def run_multi_analyst_recommendation(
     print(f"  Extracted {len(fundamental_cols)} fundamental metrics")
     print(f"  Extracted {len(technical_cols)} technical indicators")
 
-    # ========================================================================
+    # 
     # 2. Extract NEWS window
-    # ========================================================================
+    # 
     
     start_date = rec_date - pd.Timedelta(days=news_window_days)
 
@@ -192,7 +192,7 @@ Stock Context:
     print("✓ News Analyst complete")
 
     # ========================================================================
-    # 6. Run Portfolio Manager to synthesize
+    # 6. Run Portfolio Manager
     # ========================================================================
     
     print("\n" + "=" * 70)
@@ -218,7 +218,7 @@ Stock Context:
     print("✓ Manager synthesis complete")
 
     # ========================================================================
-    # 7. Build comprehensive markdown report
+    # 7. Build markdown report
     # ========================================================================
     
     print("\n" + "=" * 70)

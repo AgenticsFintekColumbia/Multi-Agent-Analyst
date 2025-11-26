@@ -18,7 +18,7 @@ from .agents import (
 
 
 # ============================================================================
-# SPECIALIST ANALYST TASKS (improved with stricter output formats)
+#  ANALYST TASKS, w the stricter output formats
 # ============================================================================
 
 fundamental_task = Task(
@@ -129,7 +129,7 @@ news_task = Task(
 
 
 # ============================================================================
-# MANAGER TASK (NEW)
+# MANAGER TASK
 # ============================================================================
 
 def create_recommender_manager_task(
