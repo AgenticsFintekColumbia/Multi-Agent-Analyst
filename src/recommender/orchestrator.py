@@ -22,13 +22,13 @@ from typing import List
 import pandas as pd
 from crewai import Crew, Process
 
-from multi_agents import (
+from .agents import (
     fundamental_agent,
     technical_agent,
     news_agent,
     recommender_manager,
 )
-from multi_tasks import (
+from .tasks import (
     fundamental_task,
     technical_task,
     news_task,

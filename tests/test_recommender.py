@@ -9,7 +9,7 @@ import sys
 from dotenv import load_dotenv
 
 from data_loader import load_datasets
-from multi_recommender import run_multi_analyst_recommendation
+from src.recommender import run_multi_analyst_recommendation
 
 
 def main():

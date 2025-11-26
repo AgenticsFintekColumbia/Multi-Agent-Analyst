@@ -9,7 +9,7 @@ Defines CrewAI Tasks for the multi-agent Recommender pipeline:
 """
 
 from crewai import Task
-from multi_agents import (
+from .agents import (
     fundamental_agent,
     technical_agent,
     news_agent,

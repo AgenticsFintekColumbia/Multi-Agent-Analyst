@@ -10,7 +10,7 @@ import sys
 from dotenv import load_dotenv
 
 from data_loader import load_datasets
-from multi_explainer import run_multi_analyst_explainer
+from src.explainer import run_multi_analyst_explainer
 
 
 def main():

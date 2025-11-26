@@ -12,13 +12,13 @@ import pandas as pd
 from datetime import timedelta
 from crewai import Crew, Process
 
-from multi_explainer_agents import (
+from .agents import (
     create_fundamental_explainer_analyst,
     create_technical_explainer_analyst,
     create_news_explainer_analyst,
     create_explainer_manager,
 )
-from multi_explainer_tasks import (
+from .tasks import (
     create_fundamental_explainer_task,
     create_technical_explainer_task,
     create_news_explainer_task,

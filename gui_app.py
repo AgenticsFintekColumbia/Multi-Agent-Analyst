@@ -1,10 +1,8 @@
 """
-gui_app.py - UPDATED VERSION WITH MULTI-AGENT EXPLAINER
+gui_app.py
 
-Replace your existing gui_app.py with this version.
-The key changes are:
-1. Import multi_explainer instead of crew_config for explainer
-2. Update the explainer button logic to use run_multi_analyst_explainer
+Streamlit GUI for the Agentic Recommendation System.
+Updated with new import structure.
 """
 
 import os
@@ -16,9 +14,10 @@ from dotenv import load_dotenv
 # Load environment variables from .env
 load_dotenv()
 
+# Updated imports from new structure
 from data_loader import load_datasets, build_context_for_rec
-from multi_explainer import run_multi_analyst_explainer  # NEW IMPORT
-from multi_recommender import run_multi_analyst_recommendation
+from src.explainer import run_multi_analyst_explainer
+from src.recommender import run_multi_analyst_recommendation
 
 
 
@@ -218,9 +217,7 @@ def main():
         "its own rating."
     )
 
-    #=============================================================================
-    # UPDATED: Multi-Agent Explainer option
-    #=============================================================================
+    # Multi-Agent Explainer option
     if agent_mode in [
         "Explainer: Explain analyst rating",
         "Both: Run Explainer and Recommender",
