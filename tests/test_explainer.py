@@ -7,7 +7,12 @@ Run this before integrating into the GUI.
 
 import os
 import sys
+from pathlib import Path
 from dotenv import load_dotenv
+
+# Add project root to Python path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
 from data_loader import load_datasets
 from src.explainer import run_multi_analyst_explainer
