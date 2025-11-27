@@ -19,8 +19,12 @@ from src.explainer import run_multi_analyst_explainer
 
 
 def main():
-    # Load environment variables
-    load_dotenv()
+    # Load environment variables (gracefully handle missing .env file)
+    try:
+        load_dotenv()
+    except Exception:
+        # .env file missing or has issues - continue and check env vars
+        pass
     
     # Check API key
     api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
@@ -29,6 +33,10 @@ def main():
         print("ERROR: Gemini API key not found!")
         print("=" * 70)
         print("\nPlease create a .env file with your Gemini API key.")
+        print("You can copy .env.example to .env and add your key.")
+        print("\nAlternatively, set the environment variable:")
+        print("  export GEMINI_API_KEY=your_key_here  # Mac/Linux")
+        print("  $env:GEMINI_API_KEY='your_key_here'  # Windows PowerShell")
         sys.exit(1)
     
     print("=" * 70)

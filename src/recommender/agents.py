@@ -13,7 +13,12 @@ from crewai import Agent, LLM
 from dotenv import load_dotenv
 
 # Load environment variables when this module is imported
-load_dotenv()
+# Silently fail if .env doesn't exist (user might set env vars directly)
+try:
+    load_dotenv()
+except Exception:
+    # .env file missing or has issues - that's okay, continue
+    pass
 
 
 def _get_gemini_api_key() -> str:

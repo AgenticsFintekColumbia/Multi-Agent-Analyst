@@ -12,7 +12,36 @@ import streamlit as st
 from dotenv import load_dotenv
 
 # Load environment variables from .env
-load_dotenv()
+# Handle missing files and encoding issues gracefully
+def safe_load_dotenv():
+    """Safely load .env file, handling missing files and encoding issues."""
+    from pathlib import Path
+    
+    env_file = Path(".env")
+    
+    # If .env doesn't exist, that's okay - user might set env vars directly
+    if not env_file.exists():
+        return False
+    
+    try:
+        load_dotenv()
+        return True
+    except UnicodeDecodeError:
+        # Try different encodings if UTF-8 fails
+        encodings = ['utf-8', 'utf-8-sig', 'latin-1', 'cp1252']
+        for encoding in encodings:
+            try:
+                load_dotenv(encoding=encoding)
+                return True
+            except (UnicodeDecodeError, Exception):
+                continue
+        # If all encodings fail, return False (user can set env vars directly)
+        return False
+    except Exception:
+        # Any other error loading .env - continue without it
+        return False
+
+safe_load_dotenv()
 
 # Updated imports from new structure
 from data_loader import load_datasets, build_context_for_rec
@@ -126,15 +155,34 @@ def main():
         or st.secrets.get("GEMINI_API_KEY", None)
     )
     if not api_key:
-        st.error(
-            "No Gemini API key found.\n\n"
-            "Please set `GEMINI_API_KEY` or `GOOGLE_API_KEY` in your `.env` file, "
-            "or define `GEMINI_API_KEY` in Streamlit secrets.\n\n"
-            "Example `.env` entry:\n"
-            "```text\n"
-            "GEMINI_API_KEY=your_key_here\n"
-            "```"
+        from pathlib import Path
+        env_example_exists = Path(".env.example").exists()
+        
+        error_msg = (
+            "**No Gemini API key found.**\n\n"
+            "To fix this:\n\n"
+            "1. **Create a `.env` file** in the project root\n"
         )
+        
+        if env_example_exists:
+            error_msg += (
+                "   - Copy `.env.example` to `.env`\n"
+                "   - Replace `your_api_key_here` with your actual API key\n\n"
+            )
+        else:
+            error_msg += (
+                "   - Add this line: `GEMINI_API_KEY=your_key_here`\n\n"
+            )
+        
+        error_msg += (
+            "2. **Get your free API key** from: "
+            "[https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)\n\n"
+            "**Alternative:** Set the environment variable directly:\n"
+            "- Windows PowerShell: `$env:GEMINI_API_KEY='your_key'`\n"
+            "- Mac/Linux: `export GEMINI_API_KEY='your_key'`\n"
+        )
+        
+        st.error(error_msg)
         st.stop()
 
     # --- Step 1: Mode selection screen -------------------------------------
