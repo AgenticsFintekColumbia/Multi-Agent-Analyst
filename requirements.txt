@@ -3,4 +3,4 @@ pyarrow
 python-dotenv
 streamlit
 # CrewAI with Gemini support
-crewai[google-genai]
+crewai

@@ -14,11 +14,13 @@ Everything runs on Google Gemini (free API) + CrewAI (agent framework), with a S
 ## What This Does
 
 ### Question 1: Explainer (Why did the analyst rate it this way?)
-- Takes an IBES analyst recommendation (e.g., "SELL" for Amazon on Jan 8, 2008)
-- Analyzes fundamental data (earnings, cash flow, etc.)
-- Analyzes technical data (price trends, RSI, volume)
-- Analyzes news headlines around that date
-- **Output:** A detailed explanation of why the analyst likely gave that rating
+Given a specific analyst recommendation (e.g., "SELL" for Amazon on Jan 8, 2008), the Explainer team:
+- **Extracts relevant data** from the time period before the recommendation date
+- **Fundamental Analyst** examines financial metrics (earnings growth, profitability, cash flow, debt levels, valuation ratios)
+- **Technical Analyst** evaluates price action (momentum, RSI, MACD, volume patterns, volatility)
+- **News Analyst** assesses sentiment from headlines (positive/negative catalysts, market-moving events)
+- **Explainer Manager** synthesizes all three perspectives to identify the primary drivers
+- **Output:** A comprehensive explanation with key positive/negative signals, consistency analysis, and a confidence score (0-100) explaining why the human analyst likely gave that specific rating
 
 ### Question 2: Recommender (What should the rating be?)
 - Takes the same stock and date
@@ -40,7 +42,7 @@ You've received an invitation to the `agentics-project` repository. Here's what 
 
 ### Step 2: Download the Project
 
-**Method A: Download ZIP (Easiest - No Git Required)**
+**Method A: Download ZIP (No Git Required)**
 
 1. On the repository page, click the green **Code** button
 2. Select **Download ZIP**
@@ -59,17 +61,23 @@ Note: Replace `[username]` with the actual GitHub username.
 
 ### Step 3: Open Terminal in the Project Folder
 
-**On Windows:**
+**Using VS Code (Recommended):**
+- Open VS Code
+- File → Open Folder → Select the project folder
+- Terminal → New Terminal (or press `` Ctrl+` `` / `` Cmd+` ``)
+- The terminal will automatically open in the project folder
+
+**On Windows (without VS Code):**
 - Open the unzipped folder
 - Hold Shift and right-click in the folder
 - Select "Open PowerShell window here" or "Open command window here"
 
-**On Mac:**
+**On Mac (without VS Code):**
 - Open the unzipped folder
 - Right-click and select "New Terminal at Folder"
 - Or drag the folder to Terminal
 
-**On Linux:**
+**On Linux (without VS Code):**
 - Navigate to the folder in your file manager
 - Right-click and select "Open in Terminal"
 
@@ -103,7 +111,7 @@ our-project/
 │
 ├── data_loader.py                 # Loads data from .feather files
 ├── gui_app.py                     # Main web app (run this!)
-├── .env                           # Your Gemini API key (SECRET!)
+├── .env.example                   # Template for API key (you will get rid of .example)
 ├── requirements.txt               # Python packages needed
 └── README.md                      # This file
 ```
@@ -130,7 +138,7 @@ Open your terminal/command prompt in the project folder and run:
 
 **On Mac/Linux:**
 ```bash
-python3 -m pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 **On Windows:**
@@ -145,7 +153,7 @@ This installs:
 - `python-dotenv` - Environment variables
 - Other dependencies
 
-This takes 2-3 minutes. Wait until it finishes.
+This takes 3-5 minutes. Wait until it finishes.
 
 ---
 
@@ -160,21 +168,33 @@ We use Google's Gemini AI (it's free!).
 
 ---
 
-### Step 4: Create .env File
+### Step 4: Set Up Your API Key
 
-In the project folder, create a file called `.env` (the name literally starts with a dot)
+The project includes a `.env.example` template file. Here's how to set it up:
 
-**On Windows:** Right-click → New → Text Document → Name it `.env` (remove the .txt)
+**Using VS Code (Easiest):**
+1. In VS Code, open the project folder
+2. You'll see `.env.example` in the file explorer
+3. Right-click `.env.example` → Rename
+4. Rename the copied file from `.env.example` to `.env` (remove `.example`)
+5. Replace `your_api_key_here` with your actual API key from step 3
 
-**On Mac/Linux:** Use a text editor to create `.env`
+**On Windows (without VS Code):**
+1. In File Explorer, find `.env.example` in the project folder
+2. Copy the file (Ctrl+C)
+3. Paste it (Ctrl+V) in the same folder
+4. Rename the copy from `.env.example` to `.env` (remove `.example`)
+5. Open `.env` with Notepad and replace `your_api_key_here` with your actual API key
 
-Put this inside the `.env` file:
+**On Mac/Linux (without VS Code):**
+1. In Terminal, navigate to the project folder
+2. Run: `cp .env.example .env`
+3. Open `.env` in a text editor and replace `your_api_key_here` with your actual API key
 
+**The `.env` file should look like this:**
 ```
-GEMINI_API_KEY=paste_your_key_here
+GEMINI_API_KEY=AIzaSyD...your_actual_key_here
 ```
-
-Replace `paste_your_key_here` with your actual API key from Step 3.
 
 **IMPORTANT:** Never share this file or upload it anywhere. It contains your secret key. The `.gitignore` file is already set up to prevent accidentally committing it.
 
@@ -188,7 +208,7 @@ In your terminal, from the project folder:
 
 **On Mac/Linux:**
 ```bash
-python3 -m streamlit run gui_app.py
+python -m streamlit run gui_app.py
 ```
 
 **On Windows:**
@@ -337,7 +357,7 @@ pip install -r requirements.txt
 ```
 
 ### "No Gemini API key found"
-**Fix:** Create the `.env` file with your API key (see Step 5 above)
+**Fix:** Copy `.env.example` to `.env` and add your API key (see Step 4 above)
 
 ### "FileNotFoundError: data/..."
 **Fix:** Make sure you're running from the project root folder, not inside a subfolder
@@ -401,20 +421,6 @@ pip install -r requirements.txt
 
 ---
 
-## Team Roles
-
-**Everyone should be able to:**
-- Run the app
-- Explain what Explainer does
-- Explain what Recommender does
-- Show a demo
-
-**For deeper questions:**
-- Architecture details → See `docs/` folder
-- Code structure → See `src/` folders
-- How agents work → See `agents.py` files
-
----
 
 ## Getting Help
 
