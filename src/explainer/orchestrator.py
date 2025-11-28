@@ -327,7 +327,10 @@ def run_multi_analyst_explainer(
         verbose=False,  # Changed to False to avoid recursion
     )
     fundamental_report = fundamental_crew.kickoff()
-    print("✓ Fundamental Analyst complete")
+    fundamental_text = str(fundamental_report).strip()
+    print(f"✓ Fundamental Analyst complete (length: {len(fundamental_text)} chars)")
+    if len(fundamental_text) < 50:
+        print(f"WARNING: Fundamental report seems short: {fundamental_text[:200]}")
     
     print("\nRunning Technical Analyst...")
     technical_crew = Crew(
@@ -337,7 +340,10 @@ def run_multi_analyst_explainer(
         verbose=False,  # Changed to False to avoid recursion
     )
     technical_report = technical_crew.kickoff()
-    print("✓ Technical Analyst complete")
+    technical_text = str(technical_report).strip()
+    print(f"✓ Technical Analyst complete (length: {len(technical_text)} chars)")
+    if len(technical_text) < 50:
+        print(f"WARNING: Technical report seems short: {technical_text[:200]}")
     
     print("\nRunning News Analyst...")
     news_crew = Crew(
@@ -347,7 +353,10 @@ def run_multi_analyst_explainer(
         verbose=False,  # Changed to False to avoid recursion
     )
     news_report = news_crew.kickoff()
-    print("✓ News Analyst complete")
+    news_text = str(news_report).strip()
+    print(f"✓ News Analyst complete (length: {len(news_text)} chars)")
+    if len(news_text) < 50:
+        print(f"WARNING: News report seems short: {news_text[:200]}")
     
     # Now run the manager to synthesize
     print("\n" + "=" * 70)
@@ -357,9 +366,9 @@ def run_multi_analyst_explainer(
     manager_task = create_explainer_manager_task(
         explainer_manager,
         ibes_info,
-        str(fundamental_report),
-        str(technical_report),
-        str(news_report),
+        fundamental_text,
+        technical_text,
+        news_text,
     )
     
     manager_crew = Crew(
@@ -376,4 +385,35 @@ def run_multi_analyst_explainer(
     print("✓ Multi-Agent Explainer Complete!")
     print("=" * 70)
     
-    return str(final_explanation)
+    # Build the complete markdown report with manager + analyst reports
+    manager_text = str(final_explanation).strip()
+    # fundamental_text, technical_text, news_text already extracted above
+    
+    lines = []
+    
+    # Manager report first
+    lines.append(manager_text)
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    
+    # Then show individual analyst reports
+    lines.append("# 📊 Individual Analyst Reports")
+    lines.append("")
+    
+    lines.append("## 1️⃣ Fundamental Analyst Report")
+    lines.append(fundamental_text if fundamental_text else "_No output_")
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    
+    lines.append("## 2️⃣ Technical Analyst Report")
+    lines.append(technical_text if technical_text else "_No output_")
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    
+    lines.append("## 3️⃣ News & Sentiment Analyst Report")
+    lines.append(news_text if news_text else "_No output_")
+    
+    return "\n".join(lines)

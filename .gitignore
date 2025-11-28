@@ -14,3 +14,8 @@ __pycache__/
 
 # VS Code settings
 .vscode/
+
+# Frontend build artifacts
+frontend/insight-agent/node_modules/
+frontend/insight-agent/dist/
+frontend/insight-agent/.vite/

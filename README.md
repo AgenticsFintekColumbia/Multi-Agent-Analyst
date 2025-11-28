@@ -59,7 +59,22 @@ cd agentics-project
 
 Note: Replace `[username]` with the actual GitHub username.
 
-### Step 3: Open Terminal in the Project Folder
+### Step 3: Handle Git Submodule (If You See a Warning)
+
+If you see a warning about an embedded git repository when running `git add`, you have two options:
+
+**Option A: Remove the embedded git repo (Recommended)**
+```bash
+# On Windows PowerShell:
+Remove-Item -Recurse -Force frontend/insight-agent/.git
+
+# On Mac/Linux:
+rm -rf frontend/insight-agent/.git
+```
+
+**Option B: Just ignore the warning** - It will still work fine, just won't track the frontend folder in git.
+
+### Step 4: Open Terminal in the Project Folder
 
 **Using VS Code (Recommended):**
 - Open VS Code
@@ -132,22 +147,38 @@ If you don't have Python, download it from [python.org](https://www.python.org/d
 
 ---
 
-### Step 2: Install Required Packages
+### Step 2: Install Node.js (For Frontend)
+
+You need Node.js 18 or newer for the frontend. Check if you have it:
+
+```bash
+node --version
+npm --version
+```
+
+**If you don't have Node.js:**
+- **Windows/Mac:** Download from [nodejs.org](https://nodejs.org/) (LTS version recommended)
+- **Linux:** Use your package manager (e.g., `sudo apt install nodejs npm`)
+
+**Verify installation:**
+```bash
+node --version  # Should show v18 or higher
+npm --version   # Should show 9 or higher
+```
+
+---
+
+### Step 3: Install Python Packages
 
 Open your terminal/command prompt in the project folder and run:
 
-**On Mac/Linux:**
-```bash
-python -m pip install -r requirements.txt
-```
-
-**On Windows:**
 ```bash
 python -m pip install -r requirements.txt
 ```
 
 This installs:
-- `streamlit` - Web interface
+- `fastapi` - Backend API framework
+- `uvicorn` - ASGI server
 - `crewai` - Agent framework
 - `pandas` - Data handling
 - `python-dotenv` - Environment variables
@@ -155,9 +186,15 @@ This installs:
 
 This takes 3-5 minutes. Wait until it finishes.
 
+**Note:** Frontend dependencies (`node_modules`) will be installed automatically when you run `python run.py`, or you can install them manually:
+```bash
+cd frontend/insight-agent
+npm install
+```
+
 ---
 
-### Step 3: Get Your Gemini API Key
+### Step 4: Get Your Gemini API Key
 
 We use Google's Gemini AI (it's free!).
 
@@ -168,7 +205,7 @@ We use Google's Gemini AI (it's free!).
 
 ---
 
-### Step 4: Set Up Your API Key
+### Step 5: Set Up Your API Key
 
 The project includes a `.env.example` template file. Here's how to set it up:
 
@@ -202,43 +239,61 @@ GEMINI_API_KEY=AIzaSyD...your_actual_key_here
 
 ## Running the App
 
-### Running the Web Interface (Recommended)
+### Quick Start (Single Command)
 
-In your terminal, from the project folder:
+The easiest way to run the application is with a single command that starts both the backend and frontend:
 
-**On Mac/Linux:**
 ```bash
-python -m streamlit run gui_app.py
+python run.py
 ```
 
-**On Windows:**
+This will:
+- ✅ Start the backend API server on `http://localhost:8000`
+- ✅ Start the frontend web app on `http://localhost:5173`
+- ✅ Automatically install frontend dependencies if needed
+- ✅ Show you all the URLs you need
+
+**To stop:** Press `Ctrl+C` in the terminal (this stops both servers)
+
+---
+
+### Manual Start (Alternative)
+
+If you prefer to run them separately or need more control:
+
+**Terminal 1 - Backend:**
 ```bash
-python -m streamlit run gui_app.py
+python start_backend.py
 ```
 
-Your browser will open automatically to `http://localhost:8501`
+**Terminal 2 - Frontend:**
+```bash
+cd frontend/insight-agent
+npm install  # Only needed first time
+npm run dev
+```
 
-**If it doesn't open:**
-- Manually open your browser
-- Go to `http://localhost:8501`
+Then open `http://localhost:5173` in your browser.
 
 ---
 
 ### Using the App
+
+Once you run `python run.py`, open your browser to `http://localhost:5173`
 
 #### Step 1: Choose Mode
 - **Explainer** - Explain why analyst gave their rating
 - **Recommender** - Get model's own rating
 
 #### Step 2: Select Stock
-- Pick a ticker (default: AMZN)
+- Pick a ticker from the dropdown (default: AMZN)
 - Pick a specific recommendation date
 - Adjust time windows if needed (default: 30 days fund, 7 days news)
 
 #### Step 3: Generate
-- Click "Generate Explanation" or "Generate Model Recommendation"
-- Wait 30-60 seconds (AI is thinking!)
-- Read the output
+- Click "Run Explainer Team" or "Run Recommender Team"
+- Wait 30-90 seconds (AI is thinking!)
+- Read the comprehensive analysis output
 
 ---
 

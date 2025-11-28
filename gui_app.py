@@ -2,7 +2,6 @@
 gui_app.py
 
 Streamlit GUI for the Agentic Recommendation System. Run this to get complete system w ui
-
 """
 
 import os
@@ -11,24 +10,25 @@ import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
 
+
 # Load environment variables from .env
 # Handle missing files and encoding issues gracefully
 def safe_load_dotenv():
     """Safely load .env file, handling missing files and encoding issues."""
     from pathlib import Path
-    
+
     env_file = Path(".env")
-    
+
     # If .env doesn't exist, that's okay - user might set env vars directly
     if not env_file.exists():
         return False
-    
+
     try:
         load_dotenv()
         return True
     except UnicodeDecodeError:
         # Try different encodings if UTF-8 fails
-        encodings = ['utf-8', 'utf-8-sig', 'latin-1', 'cp1252']
+        encodings = ["utf-8", "utf-8-sig", "latin-1", "cp1252"]
         for encoding in encodings:
             try:
                 load_dotenv(encoding=encoding)
@@ -40,6 +40,7 @@ def safe_load_dotenv():
     except Exception:
         # Any other error loading .env - continue without it
         return False
+
 
 safe_load_dotenv()
 
@@ -68,13 +69,30 @@ def inject_custom_css():
         <style>
         /* Overall background */
         .stApp {
-            background: linear-gradient(180deg, #f5f7ff 0%, #ffffff 40%);
+            background: linear-gradient(180deg, #f5f7ff 0%, #ffffff 50%);
+        }
+        
+        /* Main container spacing */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1rem;
         }
 
         /* Tweak headings */
         .main-title {
             font-weight: 700;
-            font-size: 2.2rem;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            color: #0f172a;
+        }
+        
+        /* Intro text spacing */
+        .intro-text {
+            margin-bottom: 2.5rem;
+            color: #475569;
+            font-size: 1.05rem;
+            line-height: 1.7;
         }
 
         .subheader-text {
@@ -83,18 +101,91 @@ def inject_custom_css():
 
         /* Cards for the mode selection */
         .mode-card {
-            padding: 1.5rem 1.2rem;
-            border-radius: 1rem;
-            border: 1px solid rgba(200, 200, 200, 0.6);
-            background-color: rgba(255, 255, 255, 0.85);
-            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
-            margin-bottom: 0.75rem;
+            padding: 2rem 1.75rem;
+            border-radius: 1.25rem;
+            border: 1px solid rgba(200, 200, 200, 0.4);
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            box-shadow: 0 4px 20px rgba(15, 23, 42, 0.1), 0 1px 3px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .mode-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(15, 23, 42, 0.15), 0 2px 6px rgba(0, 0, 0, 0.08);
         }
         .mode-card h3 {
-            margin-bottom: 0.3rem;
+            margin-bottom: 0.75rem;
+            margin-top: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
         .mode-card p {
-            margin-bottom: 0.4rem;
+            margin-bottom: 1rem;
+            line-height: 1.6;
+            color: #475569;
+        }
+        .mode-card ul {
+            margin: 1rem 0 1.5rem 0;
+            padding-left: 1.5rem;
+            line-height: 1.8;
+        }
+        .mode-card li {
+            margin-bottom: 0.5rem;
+            color: #64748b;
+        }
+        .mode-card strong {
+            color: #1e293b;
+            font-weight: 600;
+        }
+        
+        /* Button container spacing */
+        .mode-card + button {
+            margin-top: auto;
+        }
+        
+        /* Section header spacing */
+        .section-header {
+            margin-bottom: 2rem;
+            margin-top: 1.5rem;
+        }
+        
+        /* Custom button styling for mode selection */
+        .stButton > button {
+            width: 100%;
+            padding: 0.875rem 1.5rem;
+            font-weight: 600;
+            font-size: 1rem;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
+            border: none;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.1);
+        }
+        .stButton > button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+        }
+        
+        /* Column gap for better spacing */
+        .stColumn {
+            padding: 0 0.75rem;
+        }
+        
+        /* Remove default Streamlit spacing issues */
+        .element-container {
+            margin-bottom: 0;
+        }
+        
+        /* Better spacing for mode selection area */
+        .mode-selection-container {
+            margin-top: 1rem;
+            margin-bottom: 2rem;
         }
 
         /* Small mode badge */
@@ -121,10 +212,175 @@ def inject_custom_css():
             color: #92400e;
             margin-top: 0.5rem;
         }
+
+        /* Team overview card (mirrors infographic vibe) */
+        .team-card {
+            margin-top: 0.8rem;
+            padding: 1rem 1.2rem;
+            border-radius: 1.1rem;
+            border: 1px solid rgba(148, 163, 184, 0.45);
+            background-color: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+        }
+        .team-card-explainer {
+            background: linear-gradient(135deg, #e0f2fe 0%, #eff6ff 100%);
+            border-color: #bfdbfe;
+        }
+        .team-card-recommender {
+            background: linear-gradient(135deg, #dcfce7 0%, #ecfdf5 100%);
+            border-color: #bbf7d0;
+        }
+        .team-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .team-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        .team-subtitle {
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+        .team-agents {
+            margin-top: 0.55rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+        .agent-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.7);
+            white-space: nowrap;
+        }
+        .agent-pill-manager {
+            font-weight: 600;
+            box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.5);
+        }
         </style>
         """,
         unsafe_allow_html=True,
     )
+
+
+def render_team_header(agent_mode):
+    """
+    Visual card showing the active team: Manager + 3 analysts.
+    This is meant to mimic the infographic.
+    """
+    if agent_mode == "explainer":
+        title = "Explainer Team"
+        subtitle = "Q1 · Explain human analyst rating"
+        extra_class = "team-card-explainer"
+    else:
+        title = "Recommender Team"
+        subtitle = "Q2 · Model buy / hold / sell rating"
+        extra_class = "team-card-recommender"
+
+    st.markdown(
+        f"""
+        <div class="team-card {extra_class}">
+            <div class="team-header">
+                <div class="team-title">🏢 {title}</div>
+                <div class="team-subtitle">{subtitle}</div>
+            </div>
+            <div class="team-agents">
+                <span class="agent-pill agent-pill-manager">Manager</span>
+                <span class="agent-pill">Fundamental Analyst</span>
+                <span class="agent-pill">Technical Analyst</span>
+                <span class="agent-pill">News &amp; Sentiment Analyst</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def split_manager_and_analysts(markdown_text):
+    """
+    Split a team markdown into manager summary vs analyst reports.
+
+    Heuristics:
+    - Prefer an explicit "# 📊 Individual Analyst Reports" marker.
+    - Otherwise, split on the first analyst heading if we see one.
+    - If nothing matches, treat everything as the manager report.
+    """
+    if not markdown_text:
+        return "", None
+
+    text = markdown_text.strip()
+    marker = "# 📊 Individual Analyst Reports"
+
+    if marker in text:
+        head, tail = text.split(marker, 1)
+        analyst_block = f"{marker}{tail}".strip()
+        return head.strip(), analyst_block
+
+    # Fallback: look for first analyst-style heading
+    analyst_markers = [
+        "## Fundamental Analyst",
+        "## Fundamental Analyst Report",
+        "## Technical Analyst",
+        "## Technical Analyst Report",
+        "## News & Sentiment Analyst",
+        "## News & Sentiment Analyst Report",
+    ]
+    first_idx = len(text)
+    found = False
+    for m in analyst_markers:
+        pos = text.find(m)
+        if pos != -1:
+            first_idx = min(first_idx, pos)
+            found = True
+
+    if found:
+        manager_md = text[:first_idx].strip()
+        analysts_md = text[first_idx:].strip()
+        return manager_md, analysts_md
+
+    # No clear split, everything is "manager"
+    return text, None
+
+
+def render_team_output(agent_mode, full_markdown, rating_str=None):
+    """
+    Show a short manager report first, with an expander
+    to reveal the three analysts' detailed work.
+    """
+    manager_md, analysts_md = split_manager_and_analysts(full_markdown)
+
+    if agent_mode == "explainer":
+        title = "🔍 Explainer Manager Report"
+    else:
+        title = "🎯 Recommender Manager Report"
+
+    st.markdown(f"### {title}")
+    st.markdown(manager_md)
+
+    # For the recommender, also show model vs human comparison inline
+    if agent_mode == "recommender" and rating_str is not None:
+        st.markdown("---")
+        st.markdown("### 📊 Comparison: Model vs Human Analyst")
+        col_model, col_human = st.columns(2)
+        with col_model:
+            st.markdown("**Model Rating:**")
+            st.info("See the final rating in the manager report above ☝️")
+        with col_human:
+            st.markdown("**Human Analyst Rating (IBES):**")
+            st.info(f"**{rating_str}**")
+
+    if analysts_md:
+        with st.expander("👥 View detailed work from the 3 analysts", expanded=False):
+            st.markdown("#### 📊 Individual Analyst Reports")
+            st.markdown(analysts_md)
 
 
 def main():
@@ -141,11 +397,15 @@ def main():
         st.session_state.agent_mode = None  # "explainer" or "recommender"
 
     # --- Title & intro -----------------------------------------------------
-    st.markdown('<h1 class="main-title">Agentic Recommendation Explainer</h1>', unsafe_allow_html=True)
-    st.write(
-        "Interactively explore IBES analyst recommendations and generate "
-        "**LLM-based explanations** or **model-driven recommendations** using "
-        "Gemini-powered agents. Built for *Agentic AI, The Data Economy & Fintech*."
+    st.markdown(
+        '<h1 class="main-title">Agentic Recommendation Explainer</h1>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<p class="intro-text">Interactively explore IBES analyst recommendations and generate '
+        '<strong>LLM-based explanations</strong> or <strong>model-driven recommendations</strong> using '
+        'Gemini-powered agents. Built for <em>Agentic AI, The Data Economy & Fintech</em>.</p>',
+        unsafe_allow_html=True,
     )
 
     # --- API key check -----------------------------------------------------
@@ -156,24 +416,23 @@ def main():
     )
     if not api_key:
         from pathlib import Path
+
         env_example_exists = Path(".env.example").exists()
-        
+
         error_msg = (
             "**No Gemini API key found.**\n\n"
             "To fix this:\n\n"
             "1. **Create a `.env` file** in the project root\n"
         )
-        
+
         if env_example_exists:
             error_msg += (
                 "   - Copy `.env.example` to `.env`\n"
                 "   - Replace `your_api_key_here` with your actual API key\n\n"
             )
         else:
-            error_msg += (
-                "   - Add this line: `GEMINI_API_KEY=your_key_here`\n\n"
-            )
-        
+            error_msg += "   - Add this line: `GEMINI_API_KEY=your_key_here`\n\n"
+
         error_msg += (
             "2. **Get your free API key** from: "
             "[https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)\n\n"
@@ -181,15 +440,22 @@ def main():
             "- Windows PowerShell: `$env:GEMINI_API_KEY='your_key'`\n"
             "- Mac/Linux: `export GEMINI_API_KEY='your_key'`\n"
         )
-        
+
         st.error(error_msg)
         st.stop()
 
     # --- Step 1: Mode selection screen -------------------------------------
     if st.session_state.agent_mode is None:
-        st.markdown("### 1️⃣ Choose what you want the system to do")
+        st.markdown(
+            '<div class="section-header">'
+            '<h2 style="font-size: 1.5rem; font-weight: 600; color: #1e293b; margin-bottom: 0.5rem;">'
+            '1️⃣ Choose what you want the system to do'
+            '</h2>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
 
-        left_col, right_col = st.columns(2)
+        left_col, right_col = st.columns(2, gap="large")
 
         with left_col:
             st.markdown(
@@ -207,7 +473,10 @@ def main():
                 """,
                 unsafe_allow_html=True,
             )
-            if st.button("Use Explainer", use_container_width=True, key="explainer_select"):
+            st.markdown('<div style="margin-top: 1.5rem;"></div>', unsafe_allow_html=True)
+            if st.button(
+                "Use Explainer", use_container_width=True, key="explainer_select", type="primary"
+            ):
                 st.session_state.agent_mode = "explainer"
                 st.rerun()
 
@@ -227,13 +496,20 @@ def main():
                 """,
                 unsafe_allow_html=True,
             )
-            if st.button("Use Recommender", use_container_width=True, key="recommender_select"):
+            st.markdown('<div style="margin-top: 1.5rem;"></div>', unsafe_allow_html=True)
+            if st.button(
+                "Use Recommender", use_container_width=True, key="recommender_select", type="primary"
+            ):
                 st.session_state.agent_mode = "recommender"
                 st.rerun()
 
         st.markdown(
-            "Once you choose a mode, you'll be able to pick a ticker, "
-            "a specific IBES recommendation, and generate the output."
+            '<p style="margin-top: 2rem; color: #64748b; font-size: 0.95rem; text-align: center; '
+            'padding: 1rem; background: rgba(241, 245, 249, 0.5); border-radius: 0.75rem;">'
+            'Once you choose a mode, you\'ll be able to pick a ticker, '
+            'a specific IBES recommendation, and generate the output.'
+            '</p>',
+            unsafe_allow_html=True,
         )
         # Stop here on the landing screen
         st.stop()
@@ -258,8 +534,17 @@ def main():
         st.rerun()
 
     # Mode badge under the title
-    mode_label = "Explainer: Explain analyst rating" if agent_mode == "explainer" else "Recommender: Model's own rating"
-    st.markdown(f'<div class="mode-badge">{mode_label}</div>', unsafe_allow_html=True)
+    mode_label = (
+        "Explainer: Explain analyst rating"
+        if agent_mode == "explainer"
+        else "Recommender: Model's own rating"
+    )
+    st.markdown(
+        f'<div class="mode-badge">{mode_label}</div>', unsafe_allow_html=True
+    )
+
+    # visual team card (manager + 3 analysts)
+    render_team_header(agent_mode)
 
     st.markdown("---")
 
@@ -301,11 +586,11 @@ def main():
     # Build labels for each rec - DIFFERENT for Explainer vs Recommender
     option_labels = []
     option_indices = []
-    
+
     for idx, row in ibes_ticker.iterrows():
         date = row["anndats"].date() if pd.notna(row["anndats"]) else "N/A"
         analyst = str(row.get("analyst", "N/A")).strip()
-        
+
         if agent_mode == "explainer":
             # Show rating for Explainer (we're explaining it)
             rating = row.get("etext", "N/A")
@@ -313,7 +598,7 @@ def main():
         else:
             # Hide rating for Recommender (avoid bias)
             label = f"{idx} | {date} | {analyst}"
-        
+
         option_labels.append(label)
         option_indices.append(idx)
 
@@ -322,7 +607,7 @@ def main():
             select_label = "Specific IBES recommendation:"
         else:
             select_label = "Recommendation date & analyst:"
-        
+
         selected_label = st.selectbox(select_label, option_labels)
 
     selected_rec_index = int(selected_label.split(" | ")[0])
@@ -332,7 +617,7 @@ def main():
     if agent_mode == "recommender":
         st.markdown(
             '<div class="info-badge">ℹ️ Human analyst rating is hidden to avoid bias in model recommendations</div>',
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
 
     st.markdown("---")
@@ -399,7 +684,7 @@ def main():
     with st.expander("Show full IBES row (technical details)"):
         st.write(rec_series.to_dict())
 
-    # --- Step 5: Context (optional expandable) -----------------------------
+    # --- Step 5: Data context ----------------------------------------------
     st.subheader("4️⃣ Data context")
 
     context_str, _ = build_context_for_rec(
@@ -420,16 +705,19 @@ def main():
     st.subheader("5️⃣ Generate output")
 
     st.write(
-        "Click the button below to run the selected agent. "
-        "The output will show the final result first, with detailed analyst reports available below."
+        "Click the button below to run the selected team. "
+        "The manager's short report will appear first, with detailed analyst "
+        "reports available behind a toggle."
     )
 
     if agent_mode == "explainer":
         # ===================================================================
         # EXPLAINER MODE
         # ===================================================================
-        if st.button("🔍 Generate Explanation", key="explainer_btn", type="primary"):
-            with st.spinner("Running Multi-Agent Explainer Team with Gemini..."):
+        if st.button("🔍 Run Explainer Team", key="explainer_btn", type="primary"):
+            with st.spinner(
+                "Explainer Manager is collecting reports from the 3 analysts..."
+            ):
                 try:
                     explanation_md = run_multi_analyst_explainer(
                         ibes_df=ibes,
@@ -444,23 +732,22 @@ def main():
                         f"Error running Multi-Agent Explainer: {type(e).__name__}: {e}"
                     )
                     import traceback
+
                     st.text(traceback.format_exc())
                 else:
-                    st.success("✅ Explanation generated successfully!")
+                    st.success("✅ Explainer team finished. Manager report ready.")
                     st.markdown("---")
-                    
-                    # Show the full explanation in main area
-                    st.markdown("### 📄 Explanation Output")
-                    st.markdown(explanation_md)
-                    
-                    # Optional: Add expandable for specialist reports if needed
-                    # (Currently the explanation already includes all details)
+                    render_team_output(
+                        agent_mode="explainer",
+                        full_markdown=explanation_md,
+                        rating_str=rating_str,  # not used in explainer but ok
+                    )
 
     elif agent_mode == "recommender":
         # ===================================================================
         # RECOMMENDER MODE
         # ===================================================================
-        if st.button("📊 Generate Model Recommendation", key="recommender_btn", type="primary"):
+        if st.button("📊 Run Recommender Team", key="recommender_btn", type="primary"):
             cusip_val = rec_series.get("cusip", None)
             rec_date_val = rec_series.get("anndats", None)
 
@@ -470,7 +757,9 @@ def main():
                     "cannot run the multi-analyst recommender."
                 )
             else:
-                with st.spinner("Running multi-analyst Recommender Team with Gemini..."):
+                with st.spinner(
+                    "Recommender Manager is aggregating analyst views..."
+                ):
                     try:
                         reco_md = run_multi_analyst_recommendation(
                             cusip=str(cusip_val),
@@ -487,54 +776,15 @@ def main():
                             f"{type(e).__name__}: {e}"
                         )
                     else:
-                        st.success("✅ Model recommendation generated successfully!")
+                        st.success(
+                            "✅ Recommender team finished. Manager report ready."
+                        )
                         st.markdown("---")
-                        
-                        # Parse the markdown to extract sections
-                        # The format from multi_recommender.py is:
-                        # 1. Header info
-                        # 2. Final recommendation (## Model Recommendation (Final))
-                        # 3. Individual analyst reports (# 📊 Individual Analyst Reports)
-                        
-                        sections = reco_md.split("# 📊 Individual Analyst Reports")
-                        
-                        if len(sections) == 2:
-                            main_output = sections[0]
-                            analyst_reports = sections[1]
-                            
-                            # Show main output (final recommendation)
-                            st.markdown("### 🎯 Final Model Recommendation")
-                            st.markdown(main_output)
-                            
-                            st.markdown("---")
-                            
-                            # Show comparison with human analyst (now that model is done)
-                            st.markdown("### 📊 Comparison: Model vs Human Analyst")
-                            
-                            col_model, col_human = st.columns(2)
-                            
-                            with col_model:
-                                st.markdown("**Model Rating:**")
-                                st.info("See final rating in the recommendation above ☝️")
-                            
-                            with col_human:
-                                st.markdown("**Human Analyst Rating (IBES):**")
-                                st.info(f"**{rating_str}**")
-                            
-                            # Expandable detailed analyst reports
-                            with st.expander("🔬 Show detailed analyst reports", expanded=False):
-                                st.markdown("# 📊 Individual Analyst Reports")
-                                st.markdown(analyst_reports)
-                        
-                        else:
-                            # Fallback if format is different
-                            st.markdown("### 🧮 Model Recommendation")
-                            st.markdown(reco_md)
-                            
-                            # Show human rating comparison
-                            st.markdown("---")
-                            st.markdown("#### 📊 Human Analyst Rating (IBES)")
-                            st.info(f"**{rating_str}**")
+                        render_team_output(
+                            agent_mode="recommender",
+                            full_markdown=reco_md,
+                            rating_str=rating_str,
+                        )
 
 
 if __name__ == "__main__":
