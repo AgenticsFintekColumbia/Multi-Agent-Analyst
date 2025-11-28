@@ -68,6 +68,22 @@ def check_node_installed():
     # On Windows, use shell=True to ensure PATH is searched
     use_shell = sys.platform == "win32"
     
+    # On Windows, also try common installation paths
+    node_paths = []
+    if sys.platform == "win32":
+        # Common Node.js installation paths on Windows
+        program_files = os.environ.get("ProgramFiles", "C:\\Program Files")
+        program_files_x86 = os.environ.get("ProgramFiles(x86)", "C:\\Program Files (x86)")
+        node_paths = [
+            os.path.join(program_files, "nodejs", "node.exe"),
+            os.path.join(program_files_x86, "nodejs", "node.exe"),
+            "C:\\Program Files\\nodejs\\node.exe",
+        ]
+    
+    node_installed = False
+    npm_installed = False
+    
+    # Try direct command first
     try:
         result = subprocess.run(
             ["node", "--version"],
@@ -77,9 +93,28 @@ def check_node_installed():
             shell=use_shell
         )
         node_installed = result.returncode == 0
-    except (FileNotFoundError, subprocess.TimeoutExpired, Exception) as e:
-        node_installed = False
+    except (FileNotFoundError, subprocess.TimeoutExpired, Exception):
+        # Try common paths on Windows
+        if sys.platform == "win32":
+            for node_path in node_paths:
+                if os.path.exists(node_path):
+                    try:
+                        result = subprocess.run(
+                            [node_path, "--version"],
+                            capture_output=True,
+                            text=True,
+                            timeout=5
+                        )
+                        if result.returncode == 0:
+                            node_installed = True
+                            # Add to PATH for this session
+                            node_dir = os.path.dirname(node_path)
+                            os.environ["PATH"] = node_dir + os.pathsep + os.environ.get("PATH", "")
+                            break
+                    except Exception:
+                        continue
     
+    # Check npm
     try:
         result = subprocess.run(
             ["npm", "--version"],
@@ -89,8 +124,25 @@ def check_node_installed():
             shell=use_shell
         )
         npm_installed = result.returncode == 0
-    except (FileNotFoundError, subprocess.TimeoutExpired, Exception) as e:
-        npm_installed = False
+    except (FileNotFoundError, subprocess.TimeoutExpired, Exception):
+        # If node was found, npm should be in the same directory
+        if node_installed and sys.platform == "win32":
+            for node_path in node_paths:
+                if os.path.exists(node_path):
+                    npm_path = os.path.join(os.path.dirname(node_path), "npm.cmd")
+                    if os.path.exists(npm_path):
+                        try:
+                            result = subprocess.run(
+                                [npm_path, "--version"],
+                                capture_output=True,
+                                text=True,
+                                timeout=5
+                            )
+                            if result.returncode == 0:
+                                npm_installed = True
+                                break
+                        except Exception:
+                            continue
     
     return node_installed, npm_installed
 
@@ -123,17 +175,27 @@ def main():
     # Check if Node.js and npm are installed
     node_installed, npm_installed = check_node_installed()
     if not node_installed or not npm_installed:
-        print("ERROR: Node.js and/or npm are not installed!")
+        print("ERROR: Node.js and/or npm are not found in PATH!")
         print()
-        print("This application requires Node.js to run the frontend.")
-        print()
-        print("Installation Instructions:")
+        
+        # On Windows, check if Node.js might be installed but not in PATH
+        if sys.platform == "win32":
+            print("Node.js might be installed but not in your PATH.")
+            print()
+            print("Quick fixes:")
+            print("  1. Close this terminal and open a NEW terminal window")
+            print("  2. Or restart your computer (if you just installed Node.js)")
+            print("  3. Or manually add Node.js to PATH:")
+            print("     - Usually: C:\\Program Files\\nodejs")
+            print()
+        
+        print("If Node.js is not installed:")
         print()
         print("Windows:")
         print("  1. Download Node.js from: https://nodejs.org/")
         print("  2. Choose the LTS (Long Term Support) version")
         print("  3. Run the installer and follow the prompts")
-        print("  4. Restart your terminal after installation")
+        print("  4. IMPORTANT: Close and reopen your terminal after installation")
         print()
         print("Mac:")
         print("  1. Download Node.js from: https://nodejs.org/")

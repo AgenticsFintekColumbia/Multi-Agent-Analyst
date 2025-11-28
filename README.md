@@ -181,10 +181,24 @@ node --version  # Should show v18 or higher
 npm --version   # Should show 9 or higher
 ```
 
-**Note:** If you see `'npm' is not recognized` or `'node' is not recognized`, you need to:
-1. Install Node.js (see above)
-2. Restart your terminal/PowerShell
-3. Try again
+**Troubleshooting: "node is not recognized"**
+
+If you see `'npm' is not recognized` or `'node' is not recognized` even after installing:
+
+1. **Close and reopen your terminal** - This is the most common fix! Windows terminals don't always pick up PATH changes immediately.
+
+2. **Restart your computer** - If you just installed Node.js, a full restart ensures PATH is updated everywhere.
+
+3. **Check if Node.js is actually installed:**
+   - Look for `C:\Program Files\nodejs\` folder
+   - If it exists, Node.js is installed but not in PATH
+
+4. **Manually add to PATH (if needed):**
+   - Open System Properties → Environment Variables
+   - Add `C:\Program Files\nodejs` to your PATH
+   - Close and reopen terminal
+
+**Note:** The `run.py` script will try to find Node.js automatically, but it's best to have it in your PATH.
 
 ---
 
