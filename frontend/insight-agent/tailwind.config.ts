@@ -126,6 +126,56 @@ export default {
             opacity: "0.7",
           },
         },
+        "chrome-reflect": {
+          "0%": {
+            transform: "translateX(-100%) translateY(-100%) rotate(45deg)",
+          },
+          "100%": {
+            transform: "translateX(100%) translateY(100%) rotate(45deg)",
+          },
+        },
+        "holographic": {
+          "0%, 100%": {
+            "background-position": "0% 50%",
+          },
+          "50%": {
+            "background-position": "100% 50%",
+          },
+        },
+        "scan": {
+          "0%": {
+            left: "-100%",
+          },
+          "100%": {
+            left: "100%",
+          },
+        },
+        "float": {
+          "0%, 100%": {
+            transform: "translateY(0px)",
+          },
+          "50%": {
+            transform: "translateY(-20px)",
+          },
+        },
+        "pulse-chrome": {
+          "0%, 100%": {
+            opacity: "1",
+            "box-shadow": "0 0 20px hsla(210, 15%, 65%, 0.4)",
+          },
+          "50%": {
+            opacity: "0.7",
+            "box-shadow": "0 0 40px hsla(210, 15%, 65%, 0.6)",
+          },
+        },
+        "spin-slow": {
+          "0%": {
+            transform: "rotate(0deg)",
+          },
+          "100%": {
+            transform: "rotate(360deg)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -133,6 +183,12 @@ export default {
         "fade-in": "fade-in 0.5s ease-out",
         "slide-in": "slide-in 0.5s ease-out",
         "glow": "glow 2s ease-in-out infinite",
+        "chrome-reflect": "chrome-reflect 4s infinite",
+        "holographic": "holographic 8s ease infinite",
+        "scan": "scan 3s infinite",
+        "float": "float 6s ease-in-out infinite",
+        "pulse-chrome": "pulse-chrome 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "spin-slow": "spin-slow 3s linear infinite",
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

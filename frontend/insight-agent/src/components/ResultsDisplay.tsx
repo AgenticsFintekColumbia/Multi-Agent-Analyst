@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { AppMode } from "@/pages/Index";
-import { extractFormattedReport } from "@/lib/markdown-utils";
+import { extractFormattedReport, truncateManagerReport } from "@/lib/markdown-utils";
+import { FuturisticLoader } from "@/components/FuturisticLoader";
 
 interface ResultsDisplayProps {
   mode: Exclude<AppMode, null>;
@@ -15,32 +16,24 @@ interface ResultsDisplayProps {
 
 export const ResultsDisplay = ({ mode, isLoading, results }: ResultsDisplayProps) => {
   const [isAnalystReportsOpen, setIsAnalystReportsOpen] = useState(false);
+  const [isHumanRatingRevealed, setIsHumanRatingRevealed] = useState(false);
   const isExplainer = mode === "explainer";
 
   if (isLoading) {
     return (
-      <Card className="p-12 text-center relative overflow-hidden border-2 border-primary/20 bg-gradient-to-br from-card to-card/50">
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent animate-shimmer" />
+      <Card className="p-12 text-center relative overflow-hidden border-2 border-primary/20 glass-chrome">
         <div className="relative">
-          <div className="relative inline-block">
-            <Loader2 className="w-16 h-16 animate-spin mx-auto mb-6 text-primary drop-shadow-lg" />
-            <div className={`absolute inset-0 rounded-full blur-xl ${
-              isExplainer ? "bg-explainer/30" : "bg-recommender/30"
-            } animate-pulse`} />
-          </div>
-          <h3 className="text-2xl font-bold mb-3 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+          <FuturisticLoader 
+            mode={mode}
+            message={
+              isExplainer 
+                ? "Explainer Manager is collecting reports from the 3 analysts..." 
+                : "Recommender Manager is aggregating analyst views..."
+            }
+          />
+          <h3 className="text-2xl font-bold mt-8 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
             Analyzing...
           </h3>
-          <p className="text-muted-foreground text-lg">
-            {isExplainer 
-              ? "Explainer Manager is collecting reports from the 3 analysts..." 
-              : "Recommender Manager is aggregating analyst views..."}
-          </p>
-          <div className="mt-6 flex items-center justify-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-            <div className="h-2 w-2 rounded-full bg-primary animate-pulse delay-75" />
-            <div className="h-2 w-2 rounded-full bg-primary animate-pulse delay-150" />
-          </div>
         </div>
       </Card>
     );
@@ -49,12 +42,66 @@ export const ResultsDisplay = ({ mode, isLoading, results }: ResultsDisplayProps
   if (!results) return null;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
-      <Card className={`p-10 relative overflow-hidden border-2 ${
-        isExplainer ? "border-explainer/30 bg-gradient-to-br from-card via-explainer/5 to-card" : "border-recommender/30 bg-gradient-to-br from-card via-recommender/5 to-card"
+    <div className="space-y-8">
+      {/* Rating Comparison - Moved to top for recommender */}
+      {!isExplainer && results.final_rating && (
+        <Card className="p-8 glass-chrome border-2 border-recommender/40 relative overflow-hidden">
+          <div className="relative">
+            <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
+              <span className="w-1 h-8 rounded-full bg-gradient-to-b from-recommender to-recommender/50" />
+              Rating Comparison
+            </h3>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="p-8 rounded-2xl glass-chrome border-2 border-recommender/40 shadow-lg relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 glow-silver">
+                <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl bg-recommender/30 group-hover:bg-recommender/40 transition-colors" />
+                <div className="relative">
+                  <p className="text-sm font-mono text-muted-foreground mb-3 uppercase tracking-wider">Model Rating (AI)</p>
+                  <p className="text-5xl font-black text-recommender drop-shadow-lg">{results.final_rating}</p>
+                  <div className="mt-4 flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-recommender animate-pulse" />
+                    <span className="text-xs font-mono text-muted-foreground">AI Generated</span>
+                  </div>
+                </div>
+              </div>
+              <div 
+                className="p-8 rounded-2xl glass-dark border-2 border-border/60 shadow-lg relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 cursor-pointer"
+                onClick={() => setIsHumanRatingRevealed(!isHumanRatingRevealed)}
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl bg-muted/30 group-hover:bg-muted/40 transition-colors" />
+                <div className="relative">
+                  <p className="text-sm font-mono text-muted-foreground mb-3 uppercase tracking-wider">Human Analyst (IBES)</p>
+                  <div className="relative">
+                    <p 
+                      className={`text-5xl font-black drop-shadow-lg transition-all duration-300 ${
+                        isHumanRatingRevealed 
+                          ? "text-foreground blur-0" 
+                          : "text-foreground/20 blur-md"
+                      }`}
+                    >
+                      {results.human_rating || "N/A"}
+                    </p>
+                    {!isHumanRatingRevealed && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <p className="text-sm text-muted-foreground font-medium">Click to reveal</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-4 flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-muted-foreground" />
+                    <span className="text-xs font-mono text-muted-foreground">Reference</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      <Card className={`p-10 relative overflow-hidden border-2 glass-chrome ${
+        isExplainer ? "border-explainer/40" : "border-recommender/40"
       }`}>
-        <div className={`absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl opacity-20 ${
-          isExplainer ? "bg-explainer" : "bg-recommender"
+        <div className={`absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl opacity-30 ${
+          isExplainer ? "bg-explainer glow-chrome" : "bg-recommender glow-silver"
         }`} />
         <div className="relative">
           <div className="flex items-center gap-4 mb-8">
@@ -151,47 +198,14 @@ export const ResultsDisplay = ({ mode, isLoading, results }: ResultsDisplayProps
                 ),
               }}
             >
-              {extractFormattedReport(results.manager_report || "")}
+              {isExplainer 
+                ? extractFormattedReport(results.manager_report || "")
+                : truncateManagerReport(extractFormattedReport(results.manager_report || ""), 5)
+              }
             </ReactMarkdown>
           </div>
         </div>
       </Card>
-
-      {!isExplainer && results.final_rating && (
-        <Card className="p-8 bg-gradient-to-br from-recommender/10 via-recommender/5 to-transparent border-2 border-recommender/30 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-recommender/5 to-transparent animate-shimmer" />
-          <div className="relative">
-            <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
-              <span className="w-1 h-8 rounded-full bg-gradient-to-b from-recommender to-recommender/50" />
-              Rating Comparison
-            </h3>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="p-8 rounded-2xl bg-gradient-to-br from-recommender/20 to-recommender/10 border-2 border-recommender/30 shadow-lg relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-                <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl bg-recommender/20 group-hover:bg-recommender/30 transition-colors" />
-                <div className="relative">
-                  <p className="text-sm font-mono text-muted-foreground mb-3 uppercase tracking-wider">Model Rating (AI)</p>
-                  <p className="text-5xl font-black text-recommender drop-shadow-lg">{results.final_rating}</p>
-                  <div className="mt-4 flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-recommender animate-pulse" />
-                    <span className="text-xs font-mono text-muted-foreground">AI Generated</span>
-                  </div>
-                </div>
-              </div>
-              <div className="p-8 rounded-2xl bg-gradient-to-br from-muted/40 to-muted/20 border-2 border-border/50 shadow-lg relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-                <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl bg-muted/20 group-hover:bg-muted/30 transition-colors" />
-                <div className="relative">
-                  <p className="text-sm font-mono text-muted-foreground mb-3 uppercase tracking-wider">Human Analyst (IBES)</p>
-                  <p className="text-5xl font-black text-foreground drop-shadow-lg">SELL</p>
-                  <div className="mt-4 flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-muted-foreground" />
-                    <span className="text-xs font-mono text-muted-foreground">Reference</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
-      )}
 
       <Collapsible open={isAnalystReportsOpen} onOpenChange={setIsAnalystReportsOpen}>
         <Card className="p-6 border-2 border-border/50 bg-gradient-to-br from-card to-card/50 relative overflow-hidden">
@@ -220,7 +234,7 @@ export const ResultsDisplay = ({ mode, isLoading, results }: ResultsDisplayProps
             </Button>
           </CollapsibleTrigger>
           
-          <CollapsibleContent className="space-y-6 mt-6 animate-in slide-in duration-500">
+          <CollapsibleContent className="space-y-6 mt-6">
             {Object.entries(results.analyst_reports).map(([analyst, report], index) => {
               const analystColors = [
                 { bg: "from-blue-500/10 to-blue-500/5", border: "border-blue-500/20", text: "text-blue-600", icon: "📊" },

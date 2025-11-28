@@ -10,7 +10,7 @@ interface ModeSelectionProps {
 export const ModeSelection = ({ onSelectMode }: ModeSelectionProps) => {
   return (
     <div className="container mx-auto px-4 py-16 max-w-6xl">
-      <header className="text-center mb-20 animate-in fade-in duration-700">
+      <header className="text-center mb-20">
         <div className="inline-block mb-6">
           <div className="px-4 py-2 rounded-full bg-gradient-to-r from-primary/10 to-success/10 border border-primary/20 inline-flex items-center gap-2 mb-6">
             <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
@@ -42,14 +42,14 @@ export const ModeSelection = ({ onSelectMode }: ModeSelectionProps) => {
 
       <div className="grid md:grid-cols-2 gap-8 mb-12">
         <Card 
-          className="group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 cursor-pointer border-2 border-explainer/20 hover:border-explainer/50 bg-gradient-to-br from-card to-card/50"
+          className="group relative overflow-hidden transition-shadow hover:transition-all duration-300 cursor-pointer border-2 border-explainer/30 hover:border-explainer/60 glass-chrome hover:shadow-2xl hover:-translate-y-2"
           onClick={() => onSelectMode("explainer")}
         >
           <div className="absolute inset-0 bg-gradient-to-br from-explainer/10 via-explainer/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl bg-explainer/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl bg-explainer/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 glow-chrome" />
           
           <div className="relative p-10">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-explainer to-explainer/80 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-explainer to-explainer/80 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-lg">
               <Search className="w-10 h-10 text-white" />
             </div>
             
@@ -88,14 +88,14 @@ export const ModeSelection = ({ onSelectMode }: ModeSelectionProps) => {
         </Card>
 
         <Card 
-          className="group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 cursor-pointer border-2 border-recommender/20 hover:border-recommender/50 bg-gradient-to-br from-card to-card/50"
+          className="group relative overflow-hidden transition-shadow hover:transition-all duration-300 cursor-pointer border-2 border-recommender/30 hover:border-recommender/60 glass-chrome hover:shadow-2xl hover:-translate-y-2"
           onClick={() => onSelectMode("recommender")}
         >
           <div className="absolute inset-0 bg-gradient-to-br from-recommender/10 via-recommender/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl bg-recommender/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl bg-recommender/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 glow-silver" />
           
           <div className="relative p-10">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-recommender to-recommender/80 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-recommender to-recommender/80 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-lg">
               <TrendingUp className="w-10 h-10 text-white" />
             </div>
             
@@ -134,8 +134,7 @@ export const ModeSelection = ({ onSelectMode }: ModeSelectionProps) => {
         </Card>
       </div>
 
-      <Card className="p-8 bg-gradient-to-br from-muted/40 to-muted/20 border-2 border-border/50 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent animate-shimmer" />
+      <Card className="p-8 glass-chrome border-2 border-border/50 relative overflow-hidden">
         <div className="relative">
           <p className="text-center text-base text-foreground/80 leading-relaxed font-medium">
             Once you choose a mode, you'll be able to pick a ticker, a specific IBES recommendation, and generate the output.

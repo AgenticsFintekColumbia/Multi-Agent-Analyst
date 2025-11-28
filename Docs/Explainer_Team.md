@@ -1,205 +1,470 @@
-# Explainer Team Architecture
+# Explainer Team Architecture - Technical Documentation
 
+## Overview
 
-
-
-## What Does the Explainer Do?
-
-The Explainer team answers **Question 1** from our project:
-
-> "Why did the human analyst give this specific rating?"
-
-For example, if a Lehman Brothers analyst gave Amazon a **SELL** rating on January 8, 2008, our Explainer figures out what data drove that decision.
+The Explainer team is a multi-agent system that explains **why a human analyst gave a specific rating** to a stock. It uses 4 specialized AI agents working together to analyze three data types (fundamental, technical, news) and synthesize them into a coherent explanation.
 
 ---
 
-## Architecture: How It Works
+## System Architecture
 
-### The Team Structure
+### Agent Hierarchy
 
 ```
                     Explainer Manager
-                    (Senior Director)
+                    (Synthesis Agent)
                            |
          +-----------------+-----------------+
          |                 |                 |
    Fundamental         Technical          News
     Analyst             Analyst          Analyst
+    (Agent 1)          (Agent 2)        (Agent 3)
          |                 |                 |
     Analyzes            Analyzes         Analyzes
    Financial            Price &          Headlines
     Metrics             Charts           & Sentiment
 ```
 
-We have **4 AI agents** working together:
+### Key Design Principles
 
-1. **Fundamental Analyst** - Looks at financial data (EPS, revenue, cash flow)
-2. **Technical Analyst** - Looks at price charts and indicators (RSI, MACD)
-3. **News Analyst** - Looks at company news around the recommendation date
-4. **Explainer Manager** - Reads all three reports and synthesizes the explanation
+1. **Separation of Concerns** - Each analyst sees only their data type
+2. **Sequential Execution** - Analysts run first, then manager synthesizes
+3. **No Cross-Communication** - Analysts don't see each other's reports until manager reads them all
+4. **Specialized Expertise** - Each agent has a specific role and backstory
 
 ---
 
-## Step-by-Step Flow
+## Code Structure
 
-### Step 1: Data Extraction
+### File Organization
 
-When you pick a recommendation in the app, the system:
+```
+src/explainer/
+├── __init__.py          # Exports main orchestrator function
+├── agents.py            # Agent definitions (4 agents)
+├── tasks.py             # Task definitions for each agent
+└── orchestrator.py      # Main execution flow and data extraction
+```
+
+### Module Responsibilities
+
+- **`agents.py`**: Defines the 4 CrewAI agents with their roles, goals, backstories, and LLM configuration
+- **`tasks.py`**: Defines what each agent should do, including input formatting and output structure requirements
+- **`orchestrator.py`**: Coordinates the entire process - extracts data, creates agents/tasks, runs crews, manages flow
+
+---
+
+## Agent Definitions (`agents.py`)
+
+All agents use **Google Gemini 2.5 Flash** as the underlying LLM, configured via CrewAI's LLM wrapper.
+
+### Agent Configuration Pattern
 
 ```python
-# Example: Amazon, Jan 8, 2008, SELL rating
-rec = ibes.loc[selected_index]
-
-# Extract three types of data:
-fundamental_data = extract_fundamental_data(rec)
-technical_data = extract_technical_data(rec)
-news_data = extract_news_data(rec)
+def create_[agent_name]() -> Agent:
+    llm = _build_gemini_llm(temperature=0.3)
+    
+    agent = Agent(
+        role="[Agent Role Name]",
+        goal="[What they're trying to accomplish]",
+        backstory="[Their expertise and constraints]",
+        verbose=False,              # Avoid recursion issues
+        allow_delegation=False,     # No sub-agent delegation
+        llm=llm,
+    )
+    return agent
 ```
 
-**What each gets:**
+### 1. Fundamental Analyst
 
-1. **Fundamental Data:**
-   - EPS (earnings per share)
-   - ROE (return on equity)
-   - Leverage (debt ratios)
-   - Cash flow metrics
-   - Latest stock price
+**File:** `src/explainer/agents.py::create_fundamental_explainer_analyst()`
 
-2. **Technical Data:**
-   - Recent price movements (last 30 days)
-   - Daily returns
-   - Volume patterns
-   - RSI (Relative Strength Index)
-   - MACD (momentum indicator)
-   - Volatility
+**Purpose:** Analyzes financial metrics to explain how fundamentals influenced the human analyst's rating.
 
-3. **News Data:**
-   - Headlines from ±7 days around rec date
-   - Event types (product launch, earnings, legal)
-   - Announcement dates
+**Configuration:**
+- **Role:** "Fundamental Data Analyst (Explainer Team)"
+- **Goal:** Analyze fundamental metrics (EPS, ROE, leverage, cash flows, etc.) to explain how these influenced the human analyst's recommendation
+- **Temperature:** 0.3 (more consistent, less creative)
+- **Key Constraints:** 
+  - Must be concise (no planning text)
+  - Must state explicitly if data is missing
+  - Cannot make up numbers
+
+**Input:** Structured string with fundamental metrics (from `extract_fundamental_data()`)
+
+**Output:** Markdown analysis report focusing on how fundamentals explain the rating
 
 ---
 
-### Step 2: Specialist Analysis (The Three Analysts)
+### 2. Technical Analyst
 
-Each analyst receives ONLY their specific data and analyzes it independently.
+**File:** `src/explainer/agents.py::create_technical_explainer_analyst()`
 
-**Fundamental Analyst**
+**Purpose:** Analyzes price action, momentum, volume, and technical indicators to explain technical influence on the rating.
 
-**Gets:** Financial metrics
+**Configuration:**
+- **Role:** "Technical Analysis Specialist (Explainer Team)"
+- **Goal:** Analyze price movements, momentum indicators, volume patterns, and technical signals to explain how these influenced the human analyst's recommendation
+- **Temperature:** 0.3
+- **Key Constraints:**
+  - Works only with provided technical data
+  - Cannot invent price levels or indicators
+  - Must be concise and direct
 
-**Analyzes:**
-- Are earnings growing or declining?
-- Is profitability strong (ROE)?
-- Is debt manageable (leverage)?
-- Is cash flow healthy?
+**Input:** Structured string with technical indicators (from `extract_technical_data()`)
 
-**Outputs:**
-```markdown
-## Fundamental Analysis
+**Output:** Markdown analysis report focusing on how technicals explain the rating
 
-### Positive Signals
-- (none found, or lists them)
+---
 
-### Negative Signals
-- (lists any bearish fundamentals)
+### 3. News Analyst
 
-### Neutral/Missing Data
+**File:** `src/explainer/agents.py::create_news_explainer_analyst()`
+
+**Purpose:** Analyzes news headlines and sentiment to explain how news influenced the rating.
+
+**Configuration:**
+- **Role:** "News & Sentiment Analyst (Explainer Team)"
+- **Goal:** Analyze news headlines and sentiment to explain how these influenced the human analyst's recommendation
+- **Temperature:** 0.3
+- **Key Constraints:**
+  - Focuses only on sentiment and catalysts
+  - Must assess positive/negative impact of each headline
+  - Cannot speculate beyond provided news
+
+**Input:** JSON-formatted news headlines (from `extract_news_data()`)
+
+**Output:** Markdown analysis report focusing on how news explains the rating
+
+---
+
+### 4. Explainer Manager
+
+**File:** `src/explainer/agents.py::create_explainer_manager()`
+
+**Purpose:** Synthesizes all three analyst reports into a coherent explanation of why the human analyst gave their rating.
+
+**Configuration:**
+- **Role:** "Senior Equity Research Director (Explainer Team)"
+- **Goal:** Synthesize three specialist reports into a comprehensive explanation of why the human analyst gave their specific rating
+- **Temperature:** 0.3
+- **Key Constraints:**
+  - Must be concise (no planning text)
+  - Must start directly with "## Executive Summary"
+  - Can only use information from the three analyst reports
+  - Cannot add external data or speculation
+
+**Input:** All three analyst reports + IBES recommendation info
+
+**Output:** Structured markdown explanation with:
+  - Executive Summary
+  - Key Drivers (Positive/Negative/Mixed)
+  - Analyst Perspective
+  - Confidence Score (0-100)
+
+---
+
+## Task Definitions (`tasks.py`)
+
+Tasks define **what** each agent should do, including:
+- Input format expectations
+- Output structure requirements
+- Constraints and instructions
+
+### Task Creation Pattern
+
+```python
+def create_[agent]_task(agent, data: str) -> Task:
+    description = f"""
+    [Detailed instructions for the agent]
+    
+    INPUT DATA:
+    {data}
+    
+    OUTPUT FORMAT:
+    [Expected markdown structure]
+    
+    CONSTRAINTS:
+    [What they cannot do]
+    """
+    
+    return Task(
+        description=description,
+        agent=agent,
+        expected_output="[Brief description of expected output]",
+    )
+```
+
+### Task Flow
+
+1. **Fundamental Task** (`create_fundamental_explainer_task`)
+   - Receives: Fundamental data string
+   - Expected Output: Markdown with positive/negative/neutral signals
+
+2. **Technical Task** (`create_technical_explainer_task`)
+   - Receives: Technical data string
+   - Expected Output: Markdown with momentum, volume, indicator analysis
+
+3. **News Task** (`create_news_explainer_task`)
+   - Receives: JSON news headlines
+   - Expected Output: Markdown with sentiment breakdown and catalysts
+
+4. **Manager Task** (`create_explainer_manager_task`)
+   - Receives: IBES info + all three analyst reports
+   - Expected Output: Structured explanation with confidence score
+
+---
+
+## Orchestration Flow (`orchestrator.py`)
+
+The orchestrator is the main entry point: `run_multi_analyst_explainer()`
+
+### Execution Steps
+
+#### Step 1: Data Extraction
+
+```python
+# Extract recommendation from IBES dataset
+rec_series = ibes_df.iloc[rec_index]
+
+# Extract data for each analyst
+fundamental_data = extract_fundamental_data(rec_series, fund_df, fund_window_days)
+technical_data = extract_technical_data(rec_series, fund_df, fund_window_days)
+news_data = extract_news_data(rec_series, news_df, news_window_days)
+ibes_info = extract_ibes_info(rec_series)
+```
+
+**Data Extraction Functions:**
+
+1. **`extract_fundamental_data()`**
+   - Filters FUND dataframe by CUSIP and date window
+   - Extracts latest fundamental metrics (EPS, ROE, leverage, cash flow)
+   - Formats as structured string
+   - **Window:** `fund_window_days` before recommendation date
+
+2. **`extract_technical_data()`**
+   - Filters FUND dataframe for same company/window
+   - Extracts price movements, RSI, MACD, volume patterns
+   - Calculates returns, volatility
+   - **Window:** `fund_window_days` before recommendation date
+
+3. **`extract_news_data()`**
+   - Filters NEWS dataframe by CUSIP and date window
+   - Extracts headlines, dates, event types
+   - Formats as JSON array
+   - **Window:** `news_window_days` around recommendation date (typically ±7 days)
+
+4. **`extract_ibes_info()`**
+   - Extracts the human analyst's recommendation details
+   - Includes: ticker, company, date, rating, analyst name
+   - Provides context for the manager
+
+#### Step 2: Agent Creation
+
+```python
+fundamental_analyst = create_fundamental_explainer_analyst()
+technical_analyst = create_technical_explainer_analyst()
+news_analyst = create_news_explainer_analyst()
+explainer_manager = create_explainer_manager()
+```
+
+Creates all 4 agents with their configured roles and backstories.
+
+#### Step 3: Task Creation
+
+```python
+fundamental_task = create_fundamental_explainer_task(fundamental_analyst, fundamental_data)
+technical_task = create_technical_explainer_task(technical_analyst, technical_data)
+news_task = create_news_explainer_task(news_analyst, news_data)
+```
+
+Creates tasks with their specific data inputs.
+
+#### Step 4: Run Specialist Analysts (Sequential)
+
+Each analyst runs in a separate Crew (one agent + one task):
+
+```python
+# Fundamental Analyst
+fundamental_crew = Crew(
+    agents=[fundamental_analyst],
+    tasks=[fundamental_task],
+    process=Process.sequential,
+    verbose=False,  # Avoid recursion issues
+)
+fundamental_report = fundamental_crew.kickoff()
+fundamental_text = str(fundamental_report).strip()
+```
+
+This pattern repeats for technical and news analysts.
+
+**Why Sequential?**
+- CrewAI runs agents sequentially by default
+- Even if we set up parallel crews, each crew runs its agent sequentially
+- Total time: ~30 seconds per analyst = ~90 seconds for all three
+
+#### Step 5: Manager Synthesis
+
+```python
+manager_task = create_explainer_manager_task(
+    explainer_manager,
+    ibes_info,
+    fundamental_text,
+    technical_text,
+    news_text,
+)
+
+manager_crew = Crew(
+    agents=[explainer_manager],
+    tasks=[manager_task],
+    process=Process.sequential,
+    verbose=False,
+)
+
+final_explanation = manager_crew.kickoff()
+```
+
+Manager receives all three reports and synthesizes them.
+
+#### Step 6: Return Results
+
+The orchestrator returns the complete markdown explanation string, which includes:
+- Manager's synthesis (executive summary, key drivers, confidence)
+- All three analyst reports (for detailed view)
+
+---
+
+## Data Flow Diagram
+
+```
+User Request
+    |
+    v
+[Backend API: /api/explainer/run]
+    |
+    v
+run_multi_analyst_explainer()
+    |
+    +---> Extract IBES Recommendation
+    |         |
+    |         +---> Extract Fundamental Data (FUND dataset)
+    |         +---> Extract Technical Data (FUND dataset)
+    |         +---> Extract News Data (NEWS dataset)
+    |         +---> Extract IBES Info
+    |
+    +---> Create Agents (4 agents)
+    |
+    +---> Create Tasks (4 tasks with data)
+    |
+    +---> Run Fundamental Crew
+    |         |
+    |         +---> [Gemini API Call]
+    |         |
+    |         +---> Fundamental Report (markdown)
+    |
+    +---> Run Technical Crew
+    |         |
+    |         +---> [Gemini API Call]
+    |         |
+    |         +---> Technical Report (markdown)
+    |
+    +---> Run News Crew
+    |         |
+    |         +---> [Gemini API Call]
+    |         |
+    |         +---> News Report (markdown)
+    |
+    +---> Run Manager Crew
+    |         |
+    |         +---> [Gemini API Call with all 3 reports]
+    |         |
+    |         +---> Final Explanation (markdown)
+    |
+    +---> Return Complete Report
+    |
+    v
+[Backend parses and returns JSON]
+    |
+    v
+[Frontend displays results]
+```
+
+---
+
+## Example Execution
+
+### Input
+- **Ticker:** AMZN (Amazon)
+- **Date:** 2008-01-08
+- **Human Rating:** SELL
+- **Fund Window:** 30 days
+- **News Window:** 7 days
+
+### Data Extraction Results
+
+**Fundamental Data:**
 - EPS: N/A
 - ROE: N/A
-(etc.)
+- All metrics missing
 
-### Overall Assessment
-Due to missing fundamental data, cannot assess 
-financial health. Neutral rating.
-```
-
-**Technical Analyst**
-
-**Gets:** Price and volume data
-
-**Analyzes:**
-- Is price trending up or down?
-- Are momentum indicators bullish or bearish?
-- Is RSI oversold (too low) or overbought (too high)?
-- Are there volume spikes on price declines?
-
-**Outputs:**
-```markdown
-## Technical Analysis
-
-### Price Momentum
-Stock down -7.72% over period. Clear downtrend.
-
-### Volume Analysis
-Volume spike (1.1x average) on decline = selling pressure
-
-### Technical Indicators
+**Technical Data:**
+- Price down -7.72% over 30 days
 - RSI: 0.15 (extremely oversold)
-- MACD: Negative crossover (bearish)
+- MACD: Bearish crossover
+- Volume spike on decline
 
-### Overall Assessment
-Strong bearish momentum. Severe selling pressure.
-Technical signals support SELL rating.
+**News Data:**
+- Amazon Tax Central launch (positive)
+- MP3 store expansion (positive)
+- French legal ruling (negative)
+
+### Agent Outputs
+
+**Fundamental Analyst:**
+```
+## Fundamental Analysis
+- All metrics: N/A
+- Cannot assess financial health
+- Verdict: NEUTRAL (no data)
 ```
 
-**News Analyst**
+**Technical Analyst:**
+```
+## Technical Analysis
+- Strong bearish momentum
+- RSI 0.15 = extreme oversold
+- MACD bearish crossover
+- Volume spike indicates selling pressure
+- Verdict: STRONG SELL signals
+```
 
-**Gets:** News headlines
-
-**Analyzes:**
-- Are headlines positive or negative?
-- Any major catalysts (earnings, lawsuits, launches)?
-- What's the overall sentiment?
-
-**Outputs:**
-```markdown
+**News Analyst:**
+```
 ## News Analysis
-
-### Individual News Impact
-- "Amazon launches Tax Central" → POSITIVE (new product)
-- "Amazon expands MP3 store" → POSITIVE (growth)
-- "French court ruling on pricing" → NEGATIVE (legal risk)
-
-### Major Catalysts
-- Product innovation (Tax Central, MP3)
-- Minor legal headwind (France)
-
-### Overall Sentiment
-Predominantly positive news flow. Growth initiatives.
-News supports BUY/HOLD, not SELL.
+- Positive product launches
+- Minor legal headwind
+- Overall: Positive sentiment
+- Verdict: SLIGHT BUY (positive developments)
 ```
 
----
+### Manager Synthesis
 
-### Step 3: Manager Synthesis
-
-The **Explainer Manager** receives all three reports and:
-
-1. **Identifies dominant signal** - Which factor mattered most?
-2. **Checks consistency** - Do all three agree?
-3. **Explains contradictions** - If not, why?
-4. **Assesses confidence** - How reliable is this explanation?
-
-**Example Output:**
-
-```markdown
+```
 ## Executive Summary
-The SELL rating is primarily driven by overwhelmingly 
-negative technical signals (RSI 0.15, -7.72% decline). 
-This overrode positive news flow and absent fundamental 
-data.
+The SELL rating is primarily driven by overwhelmingly negative technical 
+signals (RSI 0.15, -7.72% decline). This overrode positive news flow and 
+absent fundamental data.
 
 ## Key Drivers
 
-### Primary Negative Factors
+**Positive Factors:**
+- News: Product launches, business expansion
+
+**Negative Factors:**
 - Technical: Extreme downtrend, oversold RSI, bearish MACD
 - Volume spike on decline = strong selling pressure
 
-### Primary Positive Factors
-- News: Product launches, business expansion
-
-### Mixed/Neutral Factors
+**Mixed/Neutral:**
 - Fundamentals: All data missing (N/A)
 
 ## Consistency Check
@@ -207,165 +472,122 @@ data.
 - News: SLIGHT BUY ✗
 - Fundamentals: NEUTRAL (no data)
 
-**Verdict:** Signals contradict. Analyst prioritized 
-technicals over news.
+Verdict: Signals contradict. Analyst prioritized technicals over news.
 
 ## Confidence Score: 70/100
-Moderate confidence. Technical signal is clear and 
-strong, but contradicts news and lacks fundamental 
-support.
+Moderate confidence. Technical signal is clear and strong, but contradicts 
+news and lacks fundamental support.
 ```
 
 ---
 
-## Why This Design?
+## Key Implementation Details
 
-### Separation of Concerns
+### CrewAI Configuration
 
-Each analyst focuses on ONE thing:
-- Fundamental analyst never looks at price charts
-- Technical analyst never reads news
-- News analyst never analyzes financials
+- **Process:** `Process.sequential` - Each agent completes before next starts
+- **Verbose:** `False` - Avoids Rich console recursion issues with multiple crews
+- **Delegation:** `False` - Agents don't create sub-agents
 
-**Why?** Just like real analysts specialize. A fundamental analyst and technical analyst see the world differently.
+### LLM Configuration
 
-### Manager Provides Context
+- **Model:** `gemini-2.5-flash` (Google Gemini)
+- **Temperature:** 0.3 (more consistent, less creative)
+- **API Key:** Loaded from `GEMINI_API_KEY` environment variable
 
-The manager understands:
-- How analysts weigh different signals
-- When to prioritize technicals over fundamentals
-- That missing data reduces confidence
+### Error Handling
 
-**Why?** One AI trying to do everything would get confused. The manager's job is synthesis, not analysis.
+- Missing data is explicitly stated (agents return "N/A" sections)
+- Empty data windows return warning messages
+- Agent failures would cause orchestrator to raise exception
 
-### Transparency
+### Performance
 
-Every step is visible:
-- See what each analyst found
-- See how manager weighted them
-- See where signals conflict
-
-**Why?** We want to understand WHY the explanation makes sense, not just accept it blindly.
-
----
-
-## Real Example: Amazon SELL (Jan 2008)
-
-Let's walk through a real case:
-
-### Input
-- **Stock:** Amazon (AMZN)
-- **Date:** January 8, 2008
-- **Human Rating:** SELL
-- **Analyst:** Boyd T
-
-### What Each Analyst Found
-
-**Fundamental Analyst:**
-- All metrics = N/A (missing)
-- Cannot assess financial health
-- **Verdict:** NEUTRAL (no data)
-
-**Technical Analyst:**
-- Price down -7.72% in 30 days
-- RSI at 0.15 (extremely oversold)
-- MACD crossover (bearish)
-- Volume spike on decline
-- **Verdict:** STRONG SELL
-
-**News Analyst:**
-- Amazon Tax Central launch (POSITIVE)
-- MP3 store expansion (POSITIVE)
-- French legal ruling (NEGATIVE)
-- Overall: Positive developments
-- **Verdict:** SLIGHT BUY
-
-### Manager's Synthesis
-
-**Observation:** Technical says SELL, News says BUY, Fundamentals say nothing.
-
-**Analysis:**
-- Technical signal is strongest (high conviction)
-- RSI 0.15 = extreme fear in market
-- Price action shows clear downtrend
-- News is positive but not strong enough to override severe technical weakness
-
-**Conclusion:**
-Analyst heavily weighted technical signals. In a severe downtrend (RSI 0.15), even positive news can't save the stock. Missing fundamentals meant analyst relied purely on price action.
-
-**Confidence:** 70% - Technical logic is sound, but contradicts news and lacks fundamental validation.
+- **Total Runtime:** ~60-90 seconds
+  - Fundamental Analyst: ~30 seconds
+  - Technical Analyst: ~30 seconds
+  - News Analyst: ~30 seconds
+  - Manager: ~20 seconds
+- **API Calls:** 4 total (one per agent)
+- **Sequential Execution:** No parallelization currently
 
 ---
 
-## Key Takeaways
+## Integration Points
 
-### What Makes This Special?
+### Backend API (`backend/api/explainer.py`)
 
-1. **Multi-Agent System** - Not one AI trying to do everything
-2. **Specialization** - Each agent is an expert in their domain
-3. **Hierarchical** - Specialists → Manager (like real analyst teams)
-4. **Transparent** - Can see exactly what drove the explanation
-5. **Handles Contradictions** - Explicitly identifies when signals disagree
+The orchestrator is called from the FastAPI endpoint:
 
-### What We Learned
-
-- **Missing data is common** - Fundamental data often unavailable
-- **Technicals can dominate** - Especially in volatile markets (2008 financial crisis!)
-- **News isn't always enough** - Positive headlines don't override price collapse
-- **Synthesis is hard** - Weighing contradictory signals requires judgment
-
-### For the Presentation
-
-Key points:
-- "We built a 4-agent system that specializes like real analysts"
-- "Each agent focuses on one data type - no overlap"
-- "Manager synthesizes everything and explains contradictions"
-- "System handles missing data gracefully"
-- "Provides confidence scores based on signal alignment"
-
----
-
-## Technical Details
-
-### Files Involved
-
-```
-src/explainer/
-├── agents.py          # Defines the 4 agents
-├── tasks.py           # Defines what each agent does
-└── orchestrator.py    # Runs the whole process
+```python
+explanation_md = run_multi_analyst_explainer(
+    ibes_df=ibes,
+    fund_df=fund,
+    news_df=news,
+    rec_index=rec_index,
+    fund_window_days=fund_window_days,
+    news_window_days=news_window_days,
+)
 ```
 
-### Agent Definitions (agents.py)
+The backend then:
+1. Parses the markdown to separate manager and analyst reports
+2. Returns structured JSON with:
+   - `manager_report`: Manager's synthesis
+   - `analyst_reports`: Dict with fundamental/technical/news reports
+   - `full_markdown`: Complete original markdown
 
-Each agent has:
-- **Role:** "Fundamental Analyst", "Technical Analyst", etc.
-- **Goal:** What they're trying to accomplish
-- **Backstory:** Their expertise and how they think
-- **LLM:** Google Gemini (gemini-2.5-flash)
+### Frontend (`frontend/insight-agent/src/components/ResultsDisplay.tsx`)
 
-### Task Definitions (tasks.py)
-
-Each task specifies:
-- **Input format:** What data the agent receives
-- **Output format:** Exact markdown structure expected
-- **Constraints:** What they can/cannot do
-
-### Orchestration (orchestrator.py)
-
-The main function `run_multi_analyst_explainer()`:
-
-1. Extracts data for each analyst
-2. Creates 3 specialist crews (one agent + one task each)
-3. Runs them sequentially (30 seconds each)
-4. Passes all outputs to manager
-5. Manager synthesizes final explanation
-6. Returns complete markdown report
-
-
+The frontend:
+1. Polls the API for job status
+2. Displays manager report prominently
+3. Shows analyst reports in collapsible sections
+4. Renders markdown using `react-markdown`
 
 ---
 
+## Design Decisions
 
+### Why Sequential Agents?
 
-Agentic AI Project Documentation
+- **Simplicity:** Easier to debug and trace execution
+- **Dependency:** Manager needs all three reports before it can synthesize
+- **Resource Management:** Sequential execution avoids overwhelming API rate limits
+
+### Why Separate Data Extraction?
+
+- **Clear Separation:** Each analyst only sees their domain data
+- **Reusability:** Extraction functions can be tested independently
+- **Flexibility:** Easy to change extraction logic without affecting agents
+
+### Why CrewAI Instead of Direct LLM Calls?
+
+- **Agent Framework:** Provides structure for multi-agent systems
+- **Task Management:** Handles prompt engineering, context management
+- **Future Extensibility:** Easy to add agents, change workflows
+- **Consistency:** Standardized agent/task pattern across teams
+
+---
+
+## Future Enhancements
+
+Potential improvements:
+- **Parallel Execution:** Run three specialists concurrently (requires async orchestration)
+- **Caching:** Cache analyst reports if same data requested multiple times
+- **Streaming:** Stream partial results to frontend as each analyst completes
+- **Error Recovery:** Retry failed agents automatically
+- **Validation:** Validate agent outputs before passing to manager
+
+---
+
+## Summary
+
+The Explainer team demonstrates a clean multi-agent architecture:
+- **4 specialized agents** with distinct roles
+- **Clear separation** of data domains
+- **Hierarchical synthesis** via manager agent
+- **Transparent reasoning** with detailed reports
+- **Robust error handling** for missing data
+
+This architecture makes it easy to understand why explanations are generated and allows for independent improvement of each agent's expertise.

@@ -51,6 +51,9 @@ def run_recommender_task(
         manager_md, analysts_md = split_manager_and_analysts(reco_md)
         final_rating = extract_final_rating(manager_md or reco_md)
         
+        # Get human analyst rating for comparison (even though it's hidden during selection)
+        human_rating = str(rec.get("etext", "N/A")) if pd.notna(rec.get("etext")) else None
+        
         result = {
             "manager_report": manager_md or reco_md,
             "analyst_reports": parse_analyst_reports(analysts_md) if analysts_md else {
@@ -60,6 +63,7 @@ def run_recommender_task(
             },
             "full_markdown": reco_md,
             "final_rating": final_rating,
+            "human_rating": human_rating,
         }
         
         _jobs[job_id]["status"] = "completed"

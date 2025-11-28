@@ -49,6 +49,7 @@ export interface JobStatus {
     };
     full_markdown: string;
     final_rating?: string;
+    human_rating?: string;
   } | null;
   error: string | null;
 }

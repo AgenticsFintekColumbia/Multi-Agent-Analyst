@@ -111,3 +111,42 @@ export function extractFormattedReport(markdown: string): string {
   return cleanMarkdown(markdown);
 }
 
+/**
+ * Truncate manager report to be more concise for display
+ * Keeps the first few key sections and truncates the rest
+ */
+export function truncateManagerReport(markdown: string, maxSections: number = 4): string {
+  if (!markdown) return "";
+  
+  const lines = markdown.split("\n");
+  const sections: string[] = [];
+  let currentSection: string[] = [];
+  let sectionCount = 0;
+  
+  for (const line of lines) {
+    // Check if this is a header (## or ###)
+    if (line.match(/^#{2,3}\s+/)) {
+      if (currentSection.length > 0) {
+        sections.push(currentSection.join("\n"));
+        currentSection = [];
+        sectionCount++;
+        
+        // Stop after maxSections
+        if (sectionCount >= maxSections) {
+          break;
+        }
+      }
+      currentSection.push(line);
+    } else {
+      currentSection.push(line);
+    }
+  }
+  
+  // Add the last section if we haven't exceeded max
+  if (currentSection.length > 0 && sectionCount < maxSections) {
+    sections.push(currentSection.join("\n"));
+  }
+  
+  return sections.join("\n\n").trim();
+}
+

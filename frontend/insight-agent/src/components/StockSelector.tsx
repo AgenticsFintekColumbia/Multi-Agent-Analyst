@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AppMode } from "@/pages/Index";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { apiClient, type Recommendation } from "@/lib/api";
+import { format, parseISO } from "date-fns";
 
 interface StockSelectorProps {
   mode: Exclude<AppMode, null>;
@@ -74,6 +75,48 @@ export const StockSelector = ({
     loadRecommendations();
   }, [selectedTicker, mode]);
 
+  // Group recommendations by year for both modes
+  const recommendationsByYear = useMemo(() => {
+    if (!recommendations.length) return {};
+    
+    const grouped: Record<string, Recommendation[]> = {};
+    
+    recommendations.forEach((rec) => {
+      if (!rec.date) return;
+      
+      try {
+        const date = parseISO(rec.date);
+        const year = date.getFullYear().toString();
+        
+        if (!grouped[year]) {
+          grouped[year] = [];
+        }
+        grouped[year].push(rec);
+      } catch {
+        // Skip invalid dates
+      }
+    });
+    
+    // Sort years descending (newest first) and sort recommendations within each year by date (newest first)
+    const sortedGroups: Record<string, Recommendation[]> = {};
+    Object.keys(grouped)
+      .sort((a, b) => parseInt(b) - parseInt(a))
+      .forEach((year) => {
+        sortedGroups[year] = grouped[year].sort((a, b) => {
+          if (!a.date || !b.date) return 0;
+          try {
+            const dateA = parseISO(a.date);
+            const dateB = parseISO(b.date);
+            return dateB.getTime() - dateA.getTime();
+          } catch {
+            return 0;
+          }
+        });
+      });
+    
+    return sortedGroups;
+  }, [recommendations]);
+
   return (
     <Card className="p-6 space-y-6">
       <div>
@@ -115,7 +158,9 @@ export const StockSelector = ({
 
           {selectedTicker && (
             <div>
-              <label className="text-sm font-medium mb-2 block">Recommendation</label>
+              <label className="text-sm font-medium mb-2 block">
+                Recommendation
+              </label>
               {isRecommender && (
                 <div className="mb-2 flex items-start gap-2 p-3 rounded-lg bg-warning/10 border border-warning/20">
                   <AlertCircle className="w-4 h-4 text-warning mt-0.5 flex-shrink-0" />
@@ -124,8 +169,8 @@ export const StockSelector = ({
                   </p>
                 </div>
               )}
-              <Select 
-                value={selectedRecommendation?.index?.toString()} 
+              <Select
+                value={selectedRecommendation?.index?.toString()}
                 onValueChange={(val) => {
                   const rec = recommendations.find(r => r.index.toString() === val);
                   onRecommendationChange(rec || null);
@@ -133,13 +178,31 @@ export const StockSelector = ({
                 disabled={loadingRecommendations}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder={loadingRecommendations ? "Loading recommendations..." : "Select a recommendation..."} />
+                  <SelectValue placeholder={loadingRecommendations ? (isRecommender ? "Loading dates..." : "Loading recommendations...") : (isRecommender ? "Select a date..." : "Select a recommendation...")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {recommendations.map((rec) => (
-                    <SelectItem key={rec.index} value={rec.index.toString()}>
-                      {rec.index} | {rec.date || "N/A"} | {isRecommender ? "Hidden" : (rec.rating || "N/A")} | {rec.analyst}
-                    </SelectItem>
+                  {Object.entries(recommendationsByYear).map(([year, recs]) => (
+                    <SelectGroup key={year}>
+                      <SelectLabel>{year}</SelectLabel>
+                      {recs.map((rec) => {
+                        if (!rec.date) return null;
+                        try {
+                          const date = parseISO(rec.date);
+                          const formattedDate = format(date, "MMMM d");
+                          // For explainer: show date + rating, for recommender: show only date
+                          const displayText = isRecommender 
+                            ? formattedDate
+                            : `${formattedDate} - ${rec.rating || "N/A"}`;
+                          return (
+                            <SelectItem key={rec.index} value={rec.index.toString()}>
+                              {displayText}
+                            </SelectItem>
+                          );
+                        } catch {
+                          return null;
+                        }
+                      })}
+                    </SelectGroup>
                   ))}
                 </SelectContent>
               </Select>
@@ -157,18 +220,22 @@ export const StockSelector = ({
               <p className="font-semibold">{selectedTicker}</p>
             </div>
             <div className="p-3 rounded-lg bg-muted/30">
+              <p className="text-xs text-muted-foreground mb-1">Company</p>
+              <p className="font-semibold">{selectedRecommendation.company || "N/A"}</p>
+            </div>
+            <div className="p-3 rounded-lg bg-muted/30">
               <p className="text-xs text-muted-foreground mb-1">Date</p>
-              <p className="font-semibold">{selectedRecommendation.date}</p>
+              <p className="font-semibold">{selectedRecommendation.date || "N/A"}</p>
             </div>
             {!isRecommender && (
               <div className="p-3 rounded-lg bg-muted/30">
                 <p className="text-xs text-muted-foreground mb-1">Rating</p>
-                <p className="font-semibold">{selectedRecommendation.rating}</p>
+                <p className="font-semibold">{selectedRecommendation.rating || "N/A"}</p>
               </div>
             )}
             <div className="p-3 rounded-lg bg-muted/30">
               <p className="text-xs text-muted-foreground mb-1">Analyst</p>
-              <p className="font-semibold">{selectedRecommendation.analyst}</p>
+              <p className="font-semibold">{selectedRecommendation.analyst || "N/A"}</p>
             </div>
           </div>
         </div>
