@@ -147,24 +147,44 @@ If you don't have Python, download it from [python.org](https://www.python.org/d
 
 ---
 
-### Step 2: Install Node.js (For Frontend)
+### Step 2: Install Node.js (REQUIRED - For Frontend)
 
-You need Node.js 18 or newer for the frontend. Check if you have it:
+**⚠️ Important:** Node.js is required to run the frontend. The `run.py` script will check for it and show an error if it's missing.
 
+**Check if you have it:**
 ```bash
 node --version
 npm --version
 ```
 
-**If you don't have Node.js:**
-- **Windows/Mac:** Download from [nodejs.org](https://nodejs.org/) (LTS version recommended)
-- **Linux:** Use your package manager (e.g., `sudo apt install nodejs npm`)
+**If you don't have Node.js, install it:**
+
+- **Windows:**
+  1. Download from [nodejs.org](https://nodejs.org/)
+  2. Choose the **LTS (Long Term Support)** version
+  3. Run the installer and follow the prompts
+  4. **Restart your terminal** after installation
+
+- **Mac:**
+  1. Download from [nodejs.org](https://nodejs.org/)
+  2. Or use Homebrew: `brew install node`
+
+- **Linux (Ubuntu/Debian):**
+  ```bash
+  sudo apt update
+  sudo apt install nodejs npm
+  ```
 
 **Verify installation:**
 ```bash
 node --version  # Should show v18 or higher
 npm --version   # Should show 9 or higher
 ```
+
+**Note:** If you see `'npm' is not recognized` or `'node' is not recognized`, you need to:
+1. Install Node.js (see above)
+2. Restart your terminal/PowerShell
+3. Try again
 
 ---
 

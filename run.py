@@ -12,6 +12,16 @@ import socket
 import requests
 from pathlib import Path
 
+# Fix encoding issues on Windows
+if sys.platform == "win32":
+    try:
+        # Try to set UTF-8 encoding for Windows console
+        import io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+
 # Store process references for cleanup
 processes = []
 
@@ -53,16 +63,47 @@ def is_port_open(host, port, timeout=1):
     except Exception:
         return False
 
+def check_node_installed():
+    """Check if Node.js and npm are installed"""
+    # On Windows, use shell=True to ensure PATH is searched
+    use_shell = sys.platform == "win32"
+    
+    try:
+        result = subprocess.run(
+            ["node", "--version"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            shell=use_shell
+        )
+        node_installed = result.returncode == 0
+    except (FileNotFoundError, subprocess.TimeoutExpired, Exception) as e:
+        node_installed = False
+    
+    try:
+        result = subprocess.run(
+            ["npm", "--version"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            shell=use_shell
+        )
+        npm_installed = result.returncode == 0
+    except (FileNotFoundError, subprocess.TimeoutExpired, Exception) as e:
+        npm_installed = False
+    
+    return node_installed, npm_installed
+
 def wait_for_server(url, name, max_wait=60):
     """Wait for a server to be ready by checking if it responds to HTTP requests"""
-    print(f"⏳ Waiting for {name} to start...", end="", flush=True)
+    print(f"Waiting for {name} to start...", end="", flush=True)
     start_time = time.time()
     
     while time.time() - start_time < max_wait:
         try:
             response = requests.get(url, timeout=2)
             if response.status_code < 500:  # Any response < 500 means server is up
-                print(f" ✅")
+                print(f" [OK]")
                 return True
         except (requests.exceptions.RequestException, ConnectionError):
             pass
@@ -70,14 +111,45 @@ def wait_for_server(url, name, max_wait=60):
         print(".", end="", flush=True)
         time.sleep(1)
     
-    print(f" ⚠️  (timeout after {max_wait}s, but continuing anyway)")
+    print(f" [TIMEOUT after {max_wait}s, but continuing anyway]")
     return False
 
 def main():
     print("=" * 60)
-    print("🚀 Starting Agentic Recommendation System")
+    print("Starting Agentic Recommendation System")
     print("=" * 60)
     print()
+    
+    # Check if Node.js and npm are installed
+    node_installed, npm_installed = check_node_installed()
+    if not node_installed or not npm_installed:
+        print("ERROR: Node.js and/or npm are not installed!")
+        print()
+        print("This application requires Node.js to run the frontend.")
+        print()
+        print("Installation Instructions:")
+        print()
+        print("Windows:")
+        print("  1. Download Node.js from: https://nodejs.org/")
+        print("  2. Choose the LTS (Long Term Support) version")
+        print("  3. Run the installer and follow the prompts")
+        print("  4. Restart your terminal after installation")
+        print()
+        print("Mac:")
+        print("  1. Download Node.js from: https://nodejs.org/")
+        print("  2. Or use Homebrew: brew install node")
+        print()
+        print("Linux (Ubuntu/Debian):")
+        print("  sudo apt update")
+        print("  sudo apt install nodejs npm")
+        print()
+        print("After installing, verify with:")
+        print("  node --version")
+        print("  npm --version")
+        print()
+        print("Then run this script again.")
+        print("=" * 60)
+        sys.exit(1)
     
     # Get project root directory
     project_root = Path(__file__).parent
@@ -85,14 +157,15 @@ def main():
     
     # Check if frontend directory exists
     if not frontend_dir.exists():
-        print("❌ Error: Frontend directory not found!")
+        print("ERROR: Frontend directory not found!")
         print(f"   Expected: {frontend_dir}")
         sys.exit(1)
     
     # Check if node_modules exists
     if not (frontend_dir / "node_modules").exists():
-        print("⚠️  Warning: node_modules not found!")
+        print("WARNING: node_modules not found!")
         print("   Installing frontend dependencies...")
+        print("   (This may take a few minutes on first run)")
         print()
         install_process = subprocess.Popen(
             ["npm", "install"],
@@ -101,9 +174,12 @@ def main():
         )
         install_process.wait()
         if install_process.returncode != 0:
-            print("❌ Error: Failed to install frontend dependencies")
+            print()
+            print("ERROR: Failed to install frontend dependencies")
+            print("   Try running manually: cd frontend/insight-agent && npm install")
             sys.exit(1)
-        print("✅ Frontend dependencies installed")
+        print()
+        print("SUCCESS: Frontend dependencies installed")
         print()
     
     print("Starting Backend Server...")
@@ -117,13 +193,13 @@ def main():
     processes.append(backend_process)
     
     # Wait for backend to be ready (check health endpoint)
-    print("⏳ Waiting for backend to finish loading datasets and start...")
+    print("Waiting for backend to finish loading datasets and start...")
     backend_ready = wait_for_server("http://localhost:8000/health", "Backend Server", max_wait=90)
     
     if not backend_ready:
-        print("⚠️  Backend may still be loading datasets. It will be ready shortly.")
+        print("WARNING: Backend may still be loading datasets. It will be ready shortly.")
     else:
-        print("✅ Backend is ready!")
+        print("SUCCESS: Backend is ready!")
     
     print()
     print("Starting Frontend Server...")
@@ -146,21 +222,21 @@ def main():
     processes.append(frontend_process)
     
     # Wait for frontend to be ready
-    print("⏳ Waiting for frontend to compile and start...")
+    print("Waiting for frontend to compile and start...")
     frontend_ready = wait_for_server("http://localhost:5173", "Frontend Server", max_wait=30)
     
     if frontend_ready:
-        print("✅ Frontend is ready!")
+        print("SUCCESS: Frontend is ready!")
     
     print()
     print("=" * 60)
-    print("✅ All servers are ready!")
+    print("SUCCESS: All servers are ready!")
     print()
-    print("📊 Backend API: http://localhost:8000")
-    print("📚 API Docs:    http://localhost:8000/docs")
-    print("🌐 Frontend:    http://localhost:5173")
+    print("Backend API: http://localhost:8000")
+    print("API Docs:    http://localhost:8000/docs")
+    print("Frontend:   http://localhost:5173")
     print()
-    print("💡 Tip: Open http://localhost:5173 in your browser to use the app")
+    print("TIP: Open http://localhost:5173 in your browser to use the app")
     print()
     print("Press Ctrl+C to stop all servers")
     print("=" * 60)
@@ -173,7 +249,7 @@ def main():
             # Check if processes are still alive
             for i, process in enumerate(processes):
                 if process.poll() is not None:
-                    print(f"\n⚠️  Process {i+1} exited with code {process.returncode}")
+                    print(f"\nWARNING: Process {i+1} exited with code {process.returncode}")
                     cleanup()
             time.sleep(1)
     except KeyboardInterrupt:
@@ -183,6 +259,6 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        print(f"\n❌ Error: {e}")
+        print(f"\nERROR: {e}")
         cleanup()
 
