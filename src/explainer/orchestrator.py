@@ -26,7 +26,7 @@ from .tasks import (
 )
 
 
-def extract_fundamental_data(rec_series, fund_df: pd.DataFrame, fund_window_days: int = 30) -> str:
+def extract_fundamental_data(rec_series, fund_df: pd.DataFrame, fund_window_days: int = 90) -> str:
     """
     Extract and format fundamental data for the Fundamental Analyst.
     
@@ -95,7 +95,7 @@ def extract_fundamental_data(rec_series, fund_df: pd.DataFrame, fund_window_days
     return "\n".join(parts)
 
 
-def extract_technical_data(rec_series, fund_df: pd.DataFrame, fund_window_days: int = 30) -> str:
+def extract_technical_data(rec_series, fund_df: pd.DataFrame, fund_window_days: int = 90) -> str:
     """
     Extract and format technical/price data for the Technical Analyst.
     
@@ -187,54 +187,65 @@ def extract_technical_data(rec_series, fund_df: pd.DataFrame, fund_window_days: 
     return "\n".join(parts)
 
 
-def extract_news_data(rec_series, news_df: pd.DataFrame, news_window_days: int = 7) -> str:
+def extract_news_data(rec_series, news_df: pd.DataFrame, news_window_days: int = 30) -> str:
     """
-    Extract and format news data for the News Analyst.
-    
-    Returns a structured string containing:
-    - News headlines around the recommendation date
-    - Event types
+    Extract and summarize news data for the News Analyst.
+
+    Returns a structured string containing a compact summary:
+    - Total news items in the window
+    - A small set of key headlines (most recent first)
+    - Event types when available
     """
     cusip = rec_series["cusip"]
     ann_date = rec_series["anndats"]
-    
+
     if pd.isna(ann_date):
         return "ERROR: Invalid announcement date."
-    
+
     # Get NEWS data for this company
     news_company = news_df[news_df["cusip"] == cusip].copy()
     news_start = ann_date - timedelta(days=news_window_days)
     news_end = ann_date + timedelta(days=news_window_days)
     news_window = news_company[
-        (news_company["announcedate"] >= news_start) &
-        (news_company["announcedate"] <= news_end)
+        (news_company["announcedate"] >= news_start)
+        & (news_company["announcedate"] <= news_end)
     ].sort_values("announcedate")
-    
-    parts = []
+
+    parts: list[str] = []
     parts.append("NEWS HEADLINES & EVENTS")
     parts.append("=" * 60)
     parts.append(f"Window: ±{news_window_days} days around {ann_date.date()}")
     parts.append("")
-    
+
     if len(news_window) == 0:
         parts.append("⚠ No news data available for this time window.")
     else:
-        parts.append(f"Total news items: {len(news_window)}")
+        parts.append(f"Total news items in window: {len(news_window)}")
         parts.append("")
-        
-        for _, news_row in news_window.iterrows():
-            news_date = news_row["announcedate"].date() if pd.notna(news_row["announcedate"]) else "N/A"
+
+        # Focus the LLM on a small number of key headlines (most recent first)
+        max_items = 8
+        recent_news = news_window.sort_values("announcedate", ascending=False).head(max_items)
+
+        parts.append(f"Key headlines (most recent, showing up to {max_items}):")
+        parts.append("")
+        for _, news_row in recent_news.iterrows():
+            news_date = (
+                news_row["announcedate"].date()
+                if pd.notna(news_row["announcedate"])
+                else "N/A"
+            )
             headline = news_row.get("headline", "No headline")
             event_type = news_row.get("eventtype", "")
-            
+
             parts.append(f"📰 {news_date}:")
             parts.append(f"   {headline}")
             if event_type and pd.notna(event_type):
                 parts.append(f"   [Event Type: {event_type}]")
             parts.append("")
-    
+
     parts.append("=" * 60)
-    
+
     return "\n".join(parts)
 
 
@@ -264,8 +275,8 @@ def run_multi_analyst_explainer(
     fund_df: pd.DataFrame,
     news_df: pd.DataFrame,
     rec_index: int = 0,
-    fund_window_days: int = 30,
-    news_window_days: int = 7,
+    fund_window_days: int = 90,
+    news_window_days: int = 30,
 ) -> str:
     """
     Run the multi-agent Explainer team.

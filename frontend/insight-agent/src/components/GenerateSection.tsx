@@ -14,33 +14,33 @@ export const GenerateSection = ({ mode, disabled, isLoading, onGenerate }: Gener
   const isExplainer = mode === "explainer";
   
   return (
-    <Card className={`p-8 sticky top-24 border-2 ${
+    <Card className={`p-8 sticky top-24 border border-border/50 bg-card/80 backdrop-blur-sm ${
       isExplainer 
-        ? "border-explainer/30 bg-gradient-to-br from-card via-explainer/5 to-card" 
-        : "border-recommender/30 bg-gradient-to-br from-card via-recommender/5 to-card"
+        ? "border-explainer/20" 
+        : "border-recommender/20"
     } relative overflow-hidden`}>
       <div className={`absolute top-0 right-0 w-40 h-40 rounded-full blur-3xl opacity-20 ${
         isExplainer ? "bg-explainer" : "bg-recommender"
       }`} />
       <div className="relative space-y-6">
         <div>
-          <h3 className="text-2xl font-black mb-3 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+          <h3 className="text-lg font-semibold mb-3 tracking-tight text-foreground">
             Generate Analysis
           </h3>
-          <p className="text-sm text-foreground/80 leading-relaxed">
+          <p className="text-sm text-foreground/70 leading-relaxed">
             {isExplainer 
-              ? "Run the explainer team to understand the analyst's rating rationale" 
-              : "Run the recommender team to generate an independent model rating"}
+              ? "Generate an explanation for the analyst's rating rationale" 
+              : "Generate an independent model rating based on multi-agent analysis"}
           </p>
         </div>
 
         <Button
           onClick={onGenerate}
           disabled={disabled || isLoading}
-          className={`w-full h-14 text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ${
+          className={`w-full h-12 text-base font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
             isExplainer
-              ? "bg-gradient-to-r from-explainer to-explainer/80 hover:from-explainer/90 hover:to-explainer/70 text-white"
-              : "bg-gradient-to-r from-recommender to-recommender/80 hover:from-recommender/90 hover:to-recommender/70 text-white"
+              ? "bg-explainer hover:bg-explainer/90 text-white"
+              : "bg-recommender hover:bg-recommender/90 text-white"
           } disabled:opacity-50 disabled:cursor-not-allowed`}
         >
           {isLoading ? (
@@ -55,7 +55,7 @@ export const GenerateSection = ({ mode, disabled, isLoading, onGenerate }: Gener
               ) : (
                 <TrendingUp className="w-6 h-6 mr-3" />
               )}
-              <span>Run {isExplainer ? "Explainer" : "Recommender"} Team</span>
+              <span>Generate {isExplainer ? "Explanation" : "Recommendation"}</span>
             </>
           )}
         </Button>

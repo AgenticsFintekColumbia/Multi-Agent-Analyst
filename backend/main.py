@@ -56,9 +56,10 @@ app.add_middleware(
 
 
 # Import and include routers
-from backend.api import health, tickers, recommendations, explainer, recommender
+from backend.api import health, tickers, recommendations, explainer, recommender, config
 
 app.include_router(health.router)
+app.include_router(config.router, tags=["config"])
 app.include_router(tickers.router, prefix="/api", tags=["tickers"])
 app.include_router(recommendations.router, prefix="/api", tags=["recommendations"])
 app.include_router(explainer.router, prefix="/api/explainer", tags=["explainer"])

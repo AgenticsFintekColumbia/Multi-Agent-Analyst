@@ -118,9 +118,9 @@ export const StockSelector = ({
   }, [recommendations]);
 
   return (
-    <Card className="p-6 space-y-6">
+    <Card className="p-6 space-y-6 border border-border/50 bg-card/80 backdrop-blur-sm">
       <div>
-        <h3 className="text-lg font-semibold mb-4">Stock Selection</h3>
+        <h3 className="text-lg font-semibold mb-6 tracking-tight text-foreground">Stock Selection</h3>
         
         <div className="space-y-4">
           <div>

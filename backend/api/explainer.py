@@ -15,8 +15,8 @@ _jobs: Dict[str, Dict] = {}
 
 class ExplainerRequest(BaseModel):
     rec_index: int
-    fund_window_days: int = 30
-    news_window_days: int = 7
+    fund_window_days: int = 90
+    news_window_days: int = 30
 
 
 def run_explainer_task(job_id: str, rec_index: int, fund_window_days: int, news_window_days: int):

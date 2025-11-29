@@ -110,28 +110,35 @@ def create_news_explainer_task(agent, news_data: str) -> Task:
     description = f"""
 Analyze news headlines to explain how they influenced a human analyst's stock recommendation.
 
-NEWS DATA:
+NEWS DATA (summarized feed of recent headlines and events):
 {news_data}
 
 OUTPUT FORMAT (be concise, no planning text, start immediately):
 
 ## News Analysis
 
-**News Impact:**
-- **[Date]** "<headline>" → POSITIVE/NEGATIVE/NEUTRAL: <1 sentence reason>
-- ...
+### Sentiment Overview
+- Overall news tone over the window: **Positive / Negative / Mixed / Neutral**
+- 1–2 sentences summarizing how the news flow likely affected the analyst's conviction.
 
-**Major Catalysts:**
-- <major events that significantly impact rating>
-- If none: "No major catalysts identified"
+### Major Catalysts (3–5 bullets, no more)
+- <brief description of a major catalyst and its impact on the stock, grouped by theme rather than by date>
+- <only include events that clearly move sentiment or risk>
+- If none: "No major catalysts identified in this window."
 
-**Summary:** <1 sentence: Does news support BUY, SELL, or NEUTRAL?>
+### Secondary Signals (Optional, at most 3 bullets)
+- <other notable but less material headlines or patterns>
+- If not needed: omit this section.
+
+### Summary
+- 1–2 sentences: Does news flow overall support BUY, SELL, or NEUTRAL? Mention direction and confidence.
 
 CONSTRAINTS:
 - NO planning text - start directly with "## News Analysis"
-- NO process explanations
-- If no news: "No news data available for this time window"
-- Analyze ONLY the news provided
+- Do NOT list every article or date individually; aggregate headlines into themes.
+- Maximum of 8 bullets total across all lists.
+- If no news: "No news data available for this time window."
+- Analyze ONLY the news provided.
 """
     
     return Task(

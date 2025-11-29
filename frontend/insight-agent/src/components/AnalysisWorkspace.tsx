@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ArrowLeft, Search, TrendingUp, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AppMode } from "@/pages/Index";
 import { ModeBadge } from "@/components/ModeBadge";
@@ -8,7 +8,7 @@ import { StockSelector } from "@/components/StockSelector";
 import { TimeWindowControls } from "@/components/TimeWindowControls";
 import { GenerateSection } from "@/components/GenerateSection";
 import { ResultsDisplay } from "@/components/ResultsDisplay";
-import { apiClient, type Recommendation } from "@/lib/api";
+import { apiClient, type Recommendation, type Config } from "@/lib/api";
 
 interface AnalysisWorkspaceProps {
   mode: Exclude<AppMode, null>;
@@ -18,10 +18,32 @@ interface AnalysisWorkspaceProps {
 export const AnalysisWorkspace = ({ mode, onBackToModeSelection }: AnalysisWorkspaceProps) => {
   const [selectedTicker, setSelectedTicker] = useState<string>("");
   const [selectedRecommendation, setSelectedRecommendation] = useState<Recommendation | null>(null);
-  const [fundWindow, setFundWindow] = useState(30);
-  const [newsWindow, setNewsWindow] = useState(7);
+  const [config, setConfig] = useState<Config | null>(null);
+  const [fundWindow, setFundWindow] = useState<number>(90); // Default fallback, will be updated from backend
+  const [newsWindow, setNewsWindow] = useState<number>(30); // Default fallback, will be updated from backend
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
+
+  // Fetch config from backend on mount
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const configData = await apiClient.getConfig();
+        setConfig(configData);
+        // Set defaults from backend
+        if (mode === "explainer") {
+          setFundWindow(configData.defaults.explainer.fund_window_days);
+          setNewsWindow(configData.defaults.explainer.news_window_days);
+        } else {
+          setNewsWindow(configData.defaults.recommender.news_window_days);
+        }
+      } catch (error) {
+        console.error("Failed to load config:", error);
+        // Keep default fallback values
+      }
+    };
+    loadConfig();
+  }, [mode]);
 
   const handleGenerate = async () => {
     if (!selectedRecommendation) return;
@@ -73,8 +95,8 @@ export const AnalysisWorkspace = ({ mode, onBackToModeSelection }: AnalysisWorks
   };
 
   return (
-    <div className="min-h-screen">
-      <header className="border-b-2 border-border/30 bg-card/80 backdrop-blur-md sticky top-0 z-10 shadow-sm">
+    <div className={`min-h-screen ${selectedTicker && selectedRecommendation ? "pb-24" : ""}`}>
+      <header className="border-b border-border/50 bg-card/80 backdrop-blur-md sticky top-0 z-10 shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between max-w-7xl">
           <Button 
             variant="ghost" 
@@ -88,11 +110,11 @@ export const AnalysisWorkspace = ({ mode, onBackToModeSelection }: AnalysisWorks
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="container mx-auto px-4 py-8 max-w-7xl space-y-6">
         <TeamOverview mode={mode} />
         
-        <div className="grid lg:grid-cols-3 gap-8 mb-8">
-          <div className="lg:col-span-2 space-y-6">
+        <div className="grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6 pb-8">
             <StockSelector 
               mode={mode}
               selectedTicker={selectedTicker}
@@ -102,10 +124,11 @@ export const AnalysisWorkspace = ({ mode, onBackToModeSelection }: AnalysisWorks
             />
             
             <TimeWindowControls
-              fundWindow={fundWindow}
+              mode={mode}
               newsWindow={newsWindow}
-              onFundWindowChange={setFundWindow}
               onNewsWindowChange={setNewsWindow}
+              fundWindowDays={config?.defaults.explainer.fund_window_days}
+              technicalWindowDays={config?.defaults.explainer.technical_window_days}
             />
           </div>
 
@@ -127,6 +150,55 @@ export const AnalysisWorkspace = ({ mode, onBackToModeSelection }: AnalysisWorks
           />
         )}
       </div>
+
+      {/* Sticky Bottom Action Bar */}
+      {selectedTicker && selectedRecommendation && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 bg-card/95 backdrop-blur-md shadow-xl">
+          <div className="container mx-auto px-4 py-4 max-w-7xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4 text-sm">
+                <span className="font-semibold text-foreground">
+                  Ticker: <span className="font-bold text-primary">{selectedTicker}</span>
+                </span>
+                <span className="text-muted-foreground">·</span>
+                <span className="font-semibold text-foreground">
+                  NEWS: <span className="font-bold text-success">{newsWindow}</span> days
+                </span>
+              </div>
+              <Button
+                onClick={handleGenerate}
+                disabled={isLoading}
+                className={`h-10 px-6 font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+                  mode === "explainer"
+                    ? "bg-explainer hover:bg-explainer/90 text-white"
+                    : "bg-recommender hover:bg-recommender/90 text-white"
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <span>Analyzing...</span>
+                  </>
+                ) : (
+                  <>
+                    {mode === "explainer" ? (
+                      <>
+                        <Search className="w-4 h-4 mr-2" />
+                        <span>Generate Explanation</span>
+                      </>
+                    ) : (
+                      <>
+                        <TrendingUp className="w-4 h-4 mr-2" />
+                        <span>Generate Recommendation</span>
+                      </>
+                    )}
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

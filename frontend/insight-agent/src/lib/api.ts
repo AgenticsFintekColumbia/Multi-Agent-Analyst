@@ -54,6 +54,19 @@ export interface JobStatus {
   error: string | null;
 }
 
+export interface Config {
+  defaults: {
+    explainer: {
+      fund_window_days: number;
+      news_window_days: number;
+      technical_window_days: number;
+    };
+    recommender: {
+      news_window_days: number;
+    };
+  };
+};
+
 class ApiClient {
   private baseURL: string;
 
@@ -128,6 +141,10 @@ class ApiClient {
 
   async getRecommenderStatus(jobId: string): Promise<JobStatus> {
     return this.request<JobStatus>(`/api/recommender/status/${jobId}`);
+  }
+
+  async getConfig(): Promise<Config> {
+    return this.request<Config>('/api/config');
   }
 
   async pollJobStatus(

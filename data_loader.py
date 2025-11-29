@@ -66,8 +66,8 @@ def build_context_for_rec(
     fund: pd.DataFrame,
     news: pd.DataFrame,
     rec_index: int = 0,
-    fund_window_days: int = 30,
-    news_window_days: int = 7,
+    fund_window_days: int = 90,
+    news_window_days: int = 30,
 ) -> tuple[str, pd.Series]:
     """
     Build a human-readable context string for a single IBES recommendation.

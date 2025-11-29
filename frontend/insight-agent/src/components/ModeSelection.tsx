@@ -11,46 +11,37 @@ export const ModeSelection = ({ onSelectMode }: ModeSelectionProps) => {
   return (
     <div className="container mx-auto px-4 py-16 max-w-6xl">
       <header className="text-center mb-20">
-        <div className="inline-block mb-6">
-          <div className="px-4 py-2 rounded-full bg-gradient-to-r from-primary/10 to-success/10 border border-primary/20 inline-flex items-center gap-2 mb-6">
-            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-xs font-mono font-semibold text-primary uppercase tracking-wider">AI-Powered Analysis</span>
-          </div>
-        </div>
-        <h1 className="text-6xl md:text-7xl font-black mb-6 bg-gradient-to-r from-foreground via-primary to-success bg-clip-text text-transparent leading-tight">
-          Agentic Recommendation
-          <br />
-          <span className="bg-gradient-to-r from-primary via-success to-primary bg-clip-text text-transparent animate-pulse-slow">
-            System
-          </span>
+        <h1 className="text-5xl md:text-6xl font-black mb-4 bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent leading-tight">
+          Agentic Recommendation System
         </h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-light">
-          Multi-agent AI system powered by <span className="font-semibold text-foreground">Google Gemini</span> and <span className="font-semibold text-foreground">CrewAI</span> to analyze and generate stock analyst recommendations
+        <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-6">
+          A multi-agent AI engine using Google Gemini and CrewAI to generate and justify stock recommendations.
         </p>
-        <div className="mt-8 flex items-center justify-center gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-            <span className="font-mono">Real-time Analysis</span>
-          </div>
-          <div className="w-1 h-1 rounded-full bg-border" />
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse delay-500" />
-            <span className="font-mono">Multi-Agent AI</span>
-          </div>
+        <div className="flex items-center justify-center gap-3 flex-wrap mt-6">
+          <span className="px-4 py-1.5 rounded-full bg-primary/10 border border-primary/30 text-primary text-xs font-semibold tracking-wide">
+            Real-Time Analysis
+          </span>
+          <span className="px-4 py-1.5 rounded-full bg-success/10 border border-success/30 text-success text-xs font-semibold tracking-wide">
+            Multi-Agent AI
+          </span>
+          <span className="px-4 py-1.5 rounded-full bg-accent/10 border border-accent/30 text-accent text-xs font-semibold tracking-wide">
+            Data-Driven Signals
+          </span>
         </div>
       </header>
 
       <div className="grid md:grid-cols-2 gap-8 mb-12">
         <Card 
-          className="group relative overflow-hidden transition-shadow hover:transition-all duration-300 cursor-pointer border-2 border-explainer/30 hover:border-explainer/60 glass-chrome hover:shadow-2xl hover:-translate-y-2"
+          className="group relative overflow-hidden transition-all duration-300 cursor-pointer border-2 border-explainer/30 hover:border-explainer/60 glass-chrome hover:shadow-2xl hover:-translate-y-[6px] hover:shadow-explainer/20"
           onClick={() => onSelectMode("explainer")}
         >
           <div className="absolute inset-0 bg-gradient-to-br from-explainer/10 via-explainer/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl bg-explainer/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 glow-chrome" />
+          <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl bg-explainer/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="absolute inset-0 ring-2 ring-explainer/0 group-hover:ring-explainer/30 rounded-lg transition-all duration-300" />
           
           <div className="relative p-10">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-explainer to-explainer/80 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-lg">
-              <Search className="w-10 h-10 text-white" />
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-explainer to-explainer/80 flex items-center justify-center mb-8 group-hover:scale-105 transition-transform duration-300 shadow-lg">
+              <Search className="w-10 h-10 text-white transition-transform duration-300 group-hover:scale-105" />
             </div>
             
             <h2 className="text-4xl font-black mb-4 bg-gradient-to-r from-foreground to-explainer bg-clip-text text-transparent">
@@ -88,15 +79,16 @@ export const ModeSelection = ({ onSelectMode }: ModeSelectionProps) => {
         </Card>
 
         <Card 
-          className="group relative overflow-hidden transition-shadow hover:transition-all duration-300 cursor-pointer border-2 border-recommender/30 hover:border-recommender/60 glass-chrome hover:shadow-2xl hover:-translate-y-2"
+          className="group relative overflow-hidden transition-all duration-300 cursor-pointer border-2 border-recommender/30 hover:border-recommender/60 glass-chrome hover:shadow-2xl hover:-translate-y-[6px] hover:shadow-recommender/20"
           onClick={() => onSelectMode("recommender")}
         >
           <div className="absolute inset-0 bg-gradient-to-br from-recommender/10 via-recommender/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl bg-recommender/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 glow-silver" />
+          <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl bg-recommender/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="absolute inset-0 ring-2 ring-recommender/0 group-hover:ring-recommender/30 rounded-lg transition-all duration-300" />
           
           <div className="relative p-10">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-recommender to-recommender/80 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-lg">
-              <TrendingUp className="w-10 h-10 text-white" />
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-recommender to-recommender/80 flex items-center justify-center mb-8 group-hover:scale-105 transition-transform duration-300 shadow-lg">
+              <TrendingUp className="w-10 h-10 text-white transition-transform duration-300 group-hover:scale-105" />
             </div>
             
             <h2 className="text-4xl font-black mb-4 bg-gradient-to-r from-foreground to-recommender bg-clip-text text-transparent">

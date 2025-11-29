@@ -56,22 +56,22 @@ All colors MUST be HSL.
 
     --radius: 1.25rem;
     
-    /* Explainer - Silver/Chrome */
-    --explainer: 210 15% 60%;
+    /* Explainer - Blue Accent */
+    --explainer: 217 91% 60%;
     --explainer-foreground: 220 20% 8%;
-    --explainer-glow: 210 20% 75%;
+    --explainer-glow: 217 91% 70%;
     
-    /* Recommender - Dark Silver/Platinum */
-    --recommender: 220 10% 55%;
+    /* Recommender - Green Accent */
+    --recommender: 142 71% 45%;
     --recommender-foreground: 220 20% 8%;
-    --recommender-glow: 220 15% 70%;
+    --recommender-glow: 142 71% 55%;
     
     /* Futuristic Gradients */
     --gradient-subtle: linear-gradient(180deg, hsl(220 20% 8%) 0%, hsl(220 15% 12%) 100%);
     --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
     --shadow-card-hover: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 40px rgba(255, 255, 255, 0.05);
-    --shadow-explainer: 0 0 30px hsla(210, 15%, 60%, 0.3), 0 0 60px hsla(210, 15%, 60%, 0.1);
-    --shadow-recommender: 0 0 30px hsla(220, 10%, 55%, 0.3), 0 0 60px hsla(220, 10%, 55%, 0.1);
+    --shadow-explainer: 0 0 30px hsla(217, 91%, 60%, 0.3), 0 0 60px hsla(217, 91%, 60%, 0.1);
+    --shadow-recommender: 0 0 30px hsla(142, 71%, 45%, 0.3), 0 0 60px hsla(142, 71%, 45%, 0.1);
     
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     
