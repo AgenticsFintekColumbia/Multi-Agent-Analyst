@@ -4,6 +4,7 @@ python-dotenv
 streamlit
 # CrewAI with Gemini support
 crewai
+crewai[google-genai]
 # FastAPI for backend API
 fastapi>=0.104.0
 uvicorn[standard]>=0.24.0
