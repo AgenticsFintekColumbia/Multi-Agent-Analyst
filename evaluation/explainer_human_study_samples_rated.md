@@ -1,50 +1,53 @@
 # Explainer Human-Study Evaluation Results
 
-**Evaluation Date:** 2025-11-30 16:48:27
+**Evaluation Date:** 2025-11-30  
+**Number of Samples:** 16  
+**Sampling Method:** Selected recommendations with the highest data completeness (full fundamentals, technicals, and news available)
 
-**Number of Samples:** 16
+---
+
+## How We Evaluated the Explainer
+
+We generated explainer outputs for 16 historically rich analyst recommendations and had a human reviewer score each explanation on three criteria:
+
+1. **Plausibility** — does it read like a real sell-side analyst’s reasoning?  
+2. **Signal Coverage** — does it reference the key fundamental, technical, and news signals?  
+3. **Internal Consistency** — does the final conclusion logically follow from the evidence?
+
+We also checked whether the explanation correctly incorporated all available modalities (fundamentals, technicals, news) in each case.
 
 ---
 
 ## Mean Scores
 
-- **Plausibility:** 4.81 / 5.0
-- **Signal Coverage:** 4.50 / 5.0
-- **Internal Consistency:** 4.50 / 5.0
+- **Plausibility:** 4.81 / 5.0  
+- **Signal Coverage:** 4.50 / 5.0  
+- **Internal Consistency:** 4.50 / 5.0  
 
-## Modality Alignment
-
-- **Mentions fundamentals when available:** 100%
-- **Mentions technicals when available:** 100%
-- **Mentions news when available:** 100%
-- **Explicitly calls out missing data:** 0%
-
-## Data Quality
-
-- **Average data completeness score:** 3.00 / 3.0
+These results indicate that the Explainer produces realistic, data-grounded, and coherent explanations.
 
 ---
 
-## Rating Guidelines
+## Modality Alignment
 
-### Plausibility (1-5)
-"Does this explanation feel like something a real sell-side analyst could plausibly have written as the reasoning behind the rating?"
-- 1 = not at all
-- 5 = extremely plausible
+- **Mentions fundamentals:** 100%  
+- **Mentions technicals:** 100%  
+- **Mentions news:** 100%  
+- **Calls out missing data:** 0% (expected — all samples had complete data)
 
-### Signal Coverage (1-5)
-"Given the data shown to each agent (fundamental, technical, news), does the final explanation actually reference the most important signals?"
-- 1 = major signals missing / made up
-- 5 = covers key signals correctly
+---
 
-### Internal Consistency (1-5)
-"Does the explainer's conclusion (e.g. why they rated SELL) follow logically from the signals it described?"
-- 1 = contradicts itself
-- 5 = strongly consistent
+## Data Quality
 
-### Modality Checklist
+- **Average data completeness score:** 3.00 / 3.0  
+  (All samples contained full fundamental, technical, and news coverage.)
 
-- **mentions_fundamental:** If fundamental data exists, did the explanation talk about it? (yes/no/na)
-- **mentions_technical:** If technical data exists, did the explanation talk about it? (yes/no/na)
-- **mentions_news:** If news exists, did the explanation talk about it? (yes/no/na)
-- **calls_out_missing_data:** If a modality is missing, does the explanation acknowledge that instead of hallucinating numbers? (yes/no/na)
+---
+
+## Rating Criteria
+
+- **Plausibility:** 1 = implausible · 5 = highly realistic  
+- **Signal Coverage:** 1 = major gaps · 5 = comprehensive  
+- **Internal Consistency:** 1 = contradictory · 5 = well-supported  
+
+Modality checklist fields (`mentions_fundamental`, `mentions_technical`, etc.) track whether the explanation uses each data type when available.
