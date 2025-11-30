@@ -1,0 +1,168 @@
+{
+  "ic_stats": {
+    "mean_ic": -0.3333333333333333,
+    "std_ic": 1.1547005383792517,
+    "t_stat": -0.49999999999999994,
+    "hit_ratio": 0.3333333333333333,
+    "n_observations": 3
+  },
+  "portfolio_metrics": {
+    "cagr": 0.21729983766681737,
+    "volatility": 0.08174455004803081,
+    "sharpe": 2.4369889724155342,
+    "max_drawdown": -0.0057113486349771635,
+    "calmar": 38.04702734062499
+  },
+  "decay": [
+    {
+      "mean_ic": 0.3333333333333333,
+      "std_ic": 1.1547005383792517,
+      "t_stat": 0.49999999999999994,
+      "hit_ratio": 0.6666666666666666,
+      "n_observations": 3,
+      "horizon": 5
+    },
+    {
+      "mean_ic": -1.0,
+      "std_ic": 7.850462293418876e-17,
+      "t_stat": -2.2063042185692344e+16,
+      "hit_ratio": 0.0,
+      "n_observations": 3,
+      "horizon": 10
+    },
+    {
+      "mean_ic": -0.3333333333333333,
+      "std_ic": 1.1547005383792517,
+      "t_stat": -0.49999999999999994,
+      "hit_ratio": 0.3333333333333333,
+      "n_observations": 3,
+      "horizon": 21
+    },
+    {
+      "mean_ic": 0.3333333333333333,
+      "std_ic": 1.1547005383792515,
+      "t_stat": 0.5,
+      "hit_ratio": 0.6666666666666666,
+      "n_observations": 3,
+      "horizon": 63
+    }
+  ],
+  "consensus_contrarian": [
+    {
+      "bucket": "Agreement",
+      "avg_return": -0.00104338491223123,
+      "count": 84,
+      "ic_mean": null,
+      "t_stat": null,
+      "hit_ratio": null
+    },
+    {
+      "bucket": "AI_More_Bullish",
+      "avg_return": 0.0018496146012064417,
+      "count": 5,
+      "ic_mean": null,
+      "t_stat": null,
+      "hit_ratio": null
+    },
+    {
+      "bucket": "AI_More_Bearish",
+      "avg_return": 0.001587624802072441,
+      "count": 11,
+      "ic_mean": null,
+      "t_stat": null,
+      "hit_ratio": null
+    }
+  ],
+  "year_analysis": [
+    {
+      "mean_ic": 1.0,
+      "std_ic": NaN,
+      "t_stat": NaN,
+      "hit_ratio": 1.0,
+      "n_observations": 1,
+      "year": 2010
+    },
+    {
+      "mean_ic": NaN,
+      "std_ic": NaN,
+      "t_stat": NaN,
+      "hit_ratio": NaN,
+      "n_observations": 0,
+      "year": 2011
+    },
+    {
+      "mean_ic": NaN,
+      "std_ic": NaN,
+      "t_stat": NaN,
+      "hit_ratio": NaN,
+      "n_observations": 0,
+      "year": 2012
+    },
+    {
+      "mean_ic": NaN,
+      "std_ic": NaN,
+      "t_stat": NaN,
+      "hit_ratio": NaN,
+      "n_observations": 0,
+      "year": 2013
+    },
+    {
+      "mean_ic": -1.0,
+      "std_ic": 0.0,
+      "t_stat": NaN,
+      "hit_ratio": 0.0,
+      "n_observations": 2,
+      "year": 2014
+    },
+    {
+      "mean_ic": NaN,
+      "std_ic": NaN,
+      "t_stat": NaN,
+      "hit_ratio": NaN,
+      "n_observations": 0,
+      "year": 2015
+    },
+    {
+      "mean_ic": NaN,
+      "std_ic": NaN,
+      "t_stat": NaN,
+      "hit_ratio": NaN,
+      "n_observations": 0,
+      "year": 2016
+    },
+    {
+      "mean_ic": NaN,
+      "std_ic": NaN,
+      "t_stat": NaN,
+      "hit_ratio": NaN,
+      "n_observations": 0,
+      "year": 2017
+    },
+    {
+      "mean_ic": NaN,
+      "std_ic": NaN,
+      "t_stat": NaN,
+      "hit_ratio": NaN,
+      "n_observations": 0,
+      "year": 2018
+    }
+  ],
+  "regime_analysis": [
+    {
+      "mean_ic": -0.3333333333333333,
+      "std_ic": 1.1547005383792517,
+      "t_stat": -0.49999999999999994,
+      "hit_ratio": 0.3333333333333333,
+      "n_observations": 3,
+      "regime": "Pre-2015"
+    },
+    {
+      "mean_ic": NaN,
+      "std_ic": NaN,
+      "t_stat": NaN,
+      "hit_ratio": NaN,
+      "n_observations": 0,
+      "regime": "2015-2019"
+    }
+  ]
+}
