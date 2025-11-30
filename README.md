@@ -734,6 +734,149 @@ python tests/eval_explainer_aggregate.py --input_path evaluation/explainer_human
 
 ---
 
+### Recommender Backtest
+
+The backtest evaluation answers a simple question: **"If we had actually traded on the Recommender's rating on each date, how would we have performed compared to human analysts and a baseline?"**
+
+#### Overview
+
+The backtest system:
+
+1. **Runs the Recommender** on historical IBES recommendations
+2. **Records** for each (ticker, date):
+   - The model's rating (StrongBuy/Buy/Hold/UnderPerform/Sell)
+   - The human analyst's rating from IBES
+   - The future 1-month and 3-month returns of the stock
+3. **Simulates trading strategies** based on:
+   - Recommender rating
+   - Human rating
+   - A buy-and-hold baseline (always long)
+4. **Computes summary metrics**:
+   - Directional accuracy (did rating get the sign of future return right?)
+   - Average trade return
+   - Cumulative strategy return vs baseline
+
+#### Trading Rules
+
+The backtest uses a simple, fully specified trading rule:
+
+- **StrongBuy / Buy** → go long (+1)
+- **Sell / UnderPerform** → go short (-1)
+- **Hold** → no position (0)
+
+For each rating, the system computes:
+- **1-month forward return** (approximately 21 trading days after rec_date)
+- **3-month forward return** (approximately 63 trading days after rec_date)
+
+**P&L per trade:**
+- If signal ∈ {+1, -1}, P&L = signal × future_return
+- If signal = 0 (Hold), P&L = 0 (flat position)
+
+#### Step 1: Generate Backtest Dataset
+
+Run the backtest script to generate trading data:
+
+```bash
+python tests/eval_recommender_backtest.py \
+  --max_samples 300 \
+  --output_path evaluation/recommender_backtest_trades.csv
+```
+
+**What this does:**
+
+- Samples historical IBES recommendations (randomly or sequentially)
+- For each recommendation:
+  - Runs the full Recommender pipeline
+  - Extracts the model's final rating
+  - Gets the human analyst's rating from IBES
+  - Computes future 1M and 3M returns using adjusted prices from the FUND dataset
+  - Maps ratings to trading signals
+  - Computes P&L for model, human, and baseline strategies
+- Exports a CSV with all trade data
+
+**Key Options:**
+
+- `--max_samples`: Number of recommendations to process (default: 300)
+- `--output_path`: Where to save the CSV (default: `evaluation/recommender_backtest_trades.csv`)
+- `--news_window_days`: News window for Recommender (default: 30)
+- `--random_seed`: Random seed for sampling (default: 42)
+
+**Output CSV columns:**
+
+- `rec_index`, `ticker`, `rec_date`
+- `human_raw_rating`, `model_raw_rating`
+- `human_signal`, `model_signal`, `baseline_signal`
+- `return_1m`, `return_3m`
+- `model_pnl_1m`, `human_pnl_1m`, `baseline_pnl_1m`
+- `model_pnl_3m`, `human_pnl_3m`, `baseline_pnl_3m`
+- `model_dir_correct_1m`, `human_dir_correct_1m`
+- `model_dir_correct_3m`, `human_dir_correct_3m`
+
+#### Step 2: Aggregate Results
+
+Run the aggregation script to compute summary metrics:
+
+```bash
+python tests/eval_recommender_backtest_aggregate.py \
+  --input_path evaluation/recommender_backtest_trades.csv
+```
+
+**What this computes:**
+
+- **Directional Accuracy** (for non-Hold trades):
+  - % of trades where signal direction matched return direction
+  - Computed separately for model, human, and baseline
+- **Average P&L per trade:**
+  - Mean P&L for model, human, and baseline strategies
+  - Computed for both 1M and 3M horizons
+- **Cumulative P&L:**
+  - Sum of all P&L for each strategy
+  - Shows total strategy performance
+- **Model vs Human comparison:**
+  - Count of cases where model was correct and human was wrong
+  - Count of cases where human was correct and model was wrong
+
+**Output:**
+
+The script prints a summary to the console and optionally writes a markdown report (default: same directory as input CSV, with `.md` extension).
+
+**Example Output:**
+
+```
+RECOMMENDER BACKTEST: Aggregating Results
+
+1-MONTH HORIZON
+
+Directional Accuracy (non-Hold trades only):
+  Model:   62.0% (N=250)
+  Human:   58.0% (N=280)
+  Baseline: 52.0% (N=300)
+
+Average P&L per trade:
+  Model:   +1.80%
+  Human:   +1.20%
+  Baseline: +0.90%
+
+Cumulative P&L:
+  Model:   +450.00%
+  Human:   +336.00%
+  Baseline: +270.00%
+```
+
+#### Quick Reference
+
+```bash
+# 1. Generate backtest dataset
+python tests/eval_recommender_backtest.py --max_samples 300 --output_path evaluation/recommender_backtest_trades.csv
+
+# 2. Aggregate results
+python tests/eval_recommender_backtest_aggregate.py --input_path evaluation/recommender_backtest_trades.csv
+```
+
+**Note:** The backtest uses adjusted prices from the FUND dataset and handles missing future prices gracefully (skips trades where future prices are unavailable).
+
+---
+
 ## Development Notes
 
 ### For Contributors
