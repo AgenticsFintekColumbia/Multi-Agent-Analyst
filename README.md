@@ -591,6 +591,149 @@ Use the web interface to test various scenarios:
 
 ---
 
+## Evaluation
+
+### Explainer Evaluation Harness
+
+The evaluation system allows you to systematically assess the quality of Explainer outputs through human evaluation. The system prioritizes recommendations with complete data (fewest NAs, good coverage across fundamentals, technicals, and news) to ensure high-quality evaluation samples.
+
+#### Overview
+
+The evaluation process consists of three steps:
+
+1. **Sampling:** Generate a CSV of high-quality recommendations with Explainer outputs
+2. **Human Rating:** Teammates fill in rating columns in the CSV
+3. **Aggregation:** Compute summary metrics from the ratings
+
+#### Step 1: Generate Samples
+
+Run the sampling script to generate evaluation samples:
+
+```bash
+python tests/eval_explainer_sample.py --n_samples 20 --output_path evaluation/explainer_human_study_samples.csv
+```
+
+**What this does:**
+
+- Loads all IBES recommendations and computes a **data completeness score** for each
+- The score combines:
+  - `fund_non_null_ratio`: Ratio of non-null fundamental columns (EPS, ROE, leverage, cash flow, etc.)
+  - `tech_non_null_ratio`: Ratio of non-null technical columns (RSI, MACD, returns, volume, etc.)
+  - `has_news_indicator`: 1 if at least one news item exists in the window, else 0
+  - **Total score = fund_ratio + tech_ratio + news_indicator (max 3.0)**
+- Selects the top N recommendations by data completeness score
+- Runs the Explainer on each selected recommendation
+- Exports a CSV with:
+  - Recommendation details (ticker, company, date, rating)
+  - Data completeness metrics
+  - Explainer output (manager markdown + individual analyst reports)
+  - Empty columns for human ratings
+
+**Key Options:**
+
+- `--n_samples`: Number of samples to generate (default: 20)
+- `--output_path`: Where to save the CSV (default: `evaluation/explainer_human_study_samples.csv`)
+- `--fund_window_days`: Fundamental/technical data window (default: 90)
+- `--news_window_days`: News data window (default: 30)
+- `--max_candidates`: Limit candidate pool for faster scoring (default: 1000, use 0 for all)
+
+**Sampling Strategy:**
+
+The script prioritizes recommendations where:
+- Most fundamental columns are non-null (good coverage of financial metrics)
+- Most technical columns are non-null (good coverage of price/volume indicators)
+- At least some news exists in the time window
+
+This ensures evaluation focuses on cases where the Explainer has rich data to work with, rather than sparse or missing data scenarios.
+
+#### Step 2: Human Rating
+
+Open the generated CSV and fill in the rating columns for each sample:
+
+**1-5 Scale Ratings:**
+
+- **`plausibility_1_5`**: "Does this explanation feel like something a real sell-side analyst could plausibly have written as the reasoning behind the rating?"
+  - 1 = not at all
+  - 5 = extremely plausible
+
+- **`signal_coverage_1_5`**: "Given the data shown to each agent (fundamental, technical, news), does the final explanation actually reference the most important signals?"
+  - 1 = major signals missing / made up
+  - 5 = covers key signals correctly
+
+- **`internal_consistency_1_5`**: "Does the explainer's conclusion (e.g. why they rated SELL) follow logically from the signals it described?"
+  - 1 = contradicts itself
+  - 5 = strongly consistent
+
+**Yes/No/NA Checklist:**
+
+- **`mentions_fundamental`**: If fundamental data exists, did the explanation talk about it? (yes/no/na)
+- **`mentions_technical`**: If technical data exists, did the explanation talk about it? (yes/no/na)
+- **`mentions_news`**: If news exists, did the explanation talk about it? (yes/no/na)
+- **`calls_out_missing_data`**: If a modality is missing, does the explanation acknowledge that instead of hallucinating numbers? (yes/no/na)
+
+Save the CSV with a new name (e.g., `explainer_human_study_samples_rated.csv`).
+
+#### Step 3: Aggregate Results
+
+Run the aggregation script to compute summary metrics:
+
+```bash
+python tests/eval_explainer_aggregate.py --input_path evaluation/explainer_human_study_samples_rated.csv
+```
+
+**What this computes:**
+
+- **Mean Scores:**
+  - Mean Plausibility (average of `plausibility_1_5`)
+  - Mean Signal Coverage (average of `signal_coverage_1_5`)
+  - Mean Internal Consistency (average of `internal_consistency_1_5`)
+
+- **Modality Alignment Percentages:**
+  - % of samples where fundamentals were available AND `mentions_fundamental == "yes"`
+  - % of samples where technicals were available AND `mentions_technical == "yes"`
+  - % of samples where news was available AND `mentions_news == "yes"`
+  - % of samples where any modality was missing AND `calls_out_missing_data == "yes"`
+
+- **Data Quality:**
+  - Average data completeness score of the sampled set
+
+**Output:**
+
+The script prints a summary to the console and optionally writes a markdown report (default: same directory as input CSV, with `.md` extension).
+
+**Example Output:**
+
+```
+Explainer Human-Study Evaluation (N = 20 samples)
+
+Mean Scores:
+  Mean Plausibility:          4.1 / 5
+  Mean Signal Coverage:       3.8 / 5
+  Mean Internal Consistency:  4.3 / 5
+
+Modality Alignment:
+  Mentions fundamentals when available: 85%
+  Mentions technicals when available:   90%
+  Mentions news when available:         75%
+  Explicitly calls out missing data:    92%
+
+Average data completeness score (on sampled set): 2.7 / 3.0
+```
+
+#### Quick Reference
+
+```bash
+# 1. Generate high-quality samples
+python tests/eval_explainer_sample.py --n_samples 20 --output_path evaluation/explainer_human_study_samples.csv
+
+# 2. Teammates fill in ratings in the CSV
+
+# 3. Aggregate results
+python tests/eval_explainer_aggregate.py --input_path evaluation/explainer_human_study_samples_rated.csv
+```
+
+---
+
 ## Development Notes
 
 ### For Contributors
