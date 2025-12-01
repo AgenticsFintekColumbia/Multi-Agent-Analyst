@@ -49,7 +49,7 @@ export const ResultsDisplay = ({ mode, isLoading, results }: ResultsDisplayProps
           <div className="relative">
             <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
               <span className="w-1 h-8 rounded-full bg-gradient-to-b from-recommender to-recommender/50" />
-              Model Reccomendation
+              Model Recommendation
             </h3>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="p-8 rounded-2xl glass-chrome border-2 border-recommender/40 shadow-lg relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 glow-silver">
